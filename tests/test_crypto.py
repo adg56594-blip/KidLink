@@ -68,3 +68,31 @@ def test_reference_is_sequential_and_signed(link_factory):
     regs = [_create_registration(link, {**CHILD, "prenom": p, "parent_phone": "+2290197000000"}) for p in ("A", "B")]
     assert [r.ref_display for r in regs] == ["SK-0001", "SK-0002"]
     assert verify_fragment(regs[1].public_id, regs[1].qr_fragment).data["ref"] == "SK-0002"
+
+
+def test_keys_can_be_derived_from_railway_secrets(settings):
+    """Railway peut générer des secrets aléatoires (${{ secret(64) }}) : on en dérive des clés stables."""
+    from core import crypto as c
+
+    seed_f, seed_s = "f" * 20 + "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789", "s" * 20 + "ZyXwVuTsRqPoNmLkJiHgFeDcBa9876543210"
+    settings.KIDLINK_FIELD_KEYS, settings.KIDLINK_SIGNING_KEY = seed_f, seed_s
+    for f in (c._fernet, c._signing_key, c._pepper):
+        f.cache_clear()
+    try:
+        token = c.encrypt("Marie")
+        pub = c.public_key_spki_b64()
+        sig = c.sign(b"bonjour")
+        c._fernet.cache_clear(); c._signing_key.cache_clear()
+        assert c.decrypt(token) == "Marie"  # même secret -> même clé après redémarrage
+        assert c.public_key_spki_b64() == pub and c.verify(b"bonjour", sig)
+        settings.KIDLINK_SIGNING_KEY = "trop-court"
+        c._signing_key.cache_clear()
+        import pytest
+        from django.core.exceptions import ImproperlyConfigured
+
+        with pytest.raises(ImproperlyConfigured):
+            c._signing_key()
+    finally:
+        settings.KIDLINK_FIELD_KEYS = settings.KIDLINK_SIGNING_KEY = ""
+        for f in (c._fernet, c._signing_key, c._pepper):
+            f.cache_clear()

@@ -60,7 +60,29 @@ def new_signing_key_pem() -> str:
 def _fernet() -> MultiFernet:
     raw = settings.KIDLINK_FIELD_KEYS or _dev_key_file("field.key", new_field_key)
     keys = [k.strip() for k in raw.split(",") if k.strip()]
-    return MultiFernet([Fernet(k.encode()) for k in keys])
+    return MultiFernet([Fernet(_as_fernet_key(k)) for k in keys])
+
+
+MIN_SEED = 32
+
+
+def _as_fernet_key(k: str) -> bytes:
+    """Accepte une vraie clé Fernet, ou une longue phrase secrète aléatoire (ex. générée
+    par Railway avec ${{ secret(64) }}) dont on dérive une clé de 256 bits (HKDF-SHA256)."""
+    try:
+        if len(base64.urlsafe_b64decode(k.encode())) == 32:
+            return k.encode()
+    except (ValueError, TypeError):
+        pass
+    if len(k) < MIN_SEED:
+        raise ImproperlyConfigured("KIDLINK_FIELD_KEYS : secret trop court (32 caractères minimum).")
+    return base64.urlsafe_b64encode(_hkdf(k, b"kidlink-field-key-v1"))
+
+
+def _hkdf(seed: str, info: bytes) -> bytes:
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+    return HKDF(algorithm=hashes.SHA256(), length=32, salt=b"kidlink", info=info).derive(seed.encode("utf-8"))
 
 
 def encrypt(value: str) -> str:
@@ -100,6 +122,13 @@ def new_token(nbytes: int = 24) -> str:
 @lru_cache(maxsize=1)
 def _signing_key() -> ec.EllipticCurvePrivateKey:
     pem = settings.KIDLINK_SIGNING_KEY or _dev_key_file("signing.pem", new_signing_key_pem)
+    if "BEGIN" not in pem:
+        # Phrase secrète aléatoire -> clé P-256 déterministe (toujours la même pour la même phrase).
+        if len(pem.strip()) < MIN_SEED:
+            raise ImproperlyConfigured("KIDLINK_SIGNING_KEY : secret trop court (32 caractères minimum).")
+        order = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+        scalar = int.from_bytes(_hkdf(pem.strip(), b"kidlink-signing-key-v1") + _hkdf(pem.strip(), b"kidlink-signing-key-v1b"), "big") % (order - 1) + 1
+        return ec.derive_private_key(scalar, ec.SECP256R1())
     key = serialization.load_pem_private_key(pem.encode(), password=None)
     if not isinstance(key, ec.EllipticCurvePrivateKey) or key.curve.name != "secp256r1":
         raise ImproperlyConfigured("KIDLINK_SIGNING_KEY doit être une clé ECDSA P-256.")

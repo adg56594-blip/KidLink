@@ -26,12 +26,13 @@ def env_bool(name, default=False):
 
 
 TESTING = "pytest" in sys.modules or (len(sys.argv) > 1 and sys.argv[1] == "test")
+BUILD_PHASE = len(sys.argv) > 1 and sys.argv[1] == "collectstatic"  # construction : aucun secret requis
 DEBUG = env_bool("DJANGO_DEBUG", False)
 DEV_MODE = DEBUG or TESTING  # autorise des clés locales générées automatiquement
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
-    if not DEV_MODE:
+    if not DEV_MODE and not BUILD_PHASE:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY est obligatoire en production.")
     SECRET_KEY = "dev-only-insecure-key-never-use-in-production-" + "x" * 20
 
@@ -120,6 +121,9 @@ elif env("POSTGRES_DB"):
         }
     }
 else:
+    if not DEV_MODE and not BUILD_PHASE:
+        # Sur Railway, le disque est effacé à chaque déploiement : SQLite perdrait tout.
+        raise ImproperlyConfigured("DATABASE_URL (PostgreSQL) est obligatoire en production.")
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 
 if env("REDIS_URL"):
@@ -202,7 +206,7 @@ KIDLINK_TRUSTED_PROXIES = int(env("KIDLINK_TRUSTED_PROXIES", "1" if RAILWAY_DOMA
 KIDLINK_KEYS_DIR = BASE_DIR / ".keys"
 KIDLINK_FIELD_KEYS = env("KIDLINK_FIELD_KEYS", "")
 KIDLINK_SIGNING_KEY = env("KIDLINK_SIGNING_KEY", "").replace("\\n", "\n")
-if not DEV_MODE and (not KIDLINK_FIELD_KEYS or not KIDLINK_SIGNING_KEY):
+if not DEV_MODE and not BUILD_PHASE and (not KIDLINK_FIELD_KEYS or not KIDLINK_SIGNING_KEY):
     raise ImproperlyConfigured(
         "KIDLINK_FIELD_KEYS et KIDLINK_SIGNING_KEY sont obligatoires en production "
         "(python manage.py generate_keys)."

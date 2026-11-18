@@ -88,11 +88,14 @@ Le contrôle de santé `/healthz/` empêche une version cassée de remplacer cel
 
 À faire **une seule fois** dans le projet Railway, avant de fusionner sur `main` :
 
-1. **+ New → Database → PostgreSQL**, puis reliez la variable `DATABASE_URL` au service web.
-2. Dans le service web, onglet **Variables**, ajoutez :
-   - `DJANGO_SECRET_KEY`, `KIDLINK_FIELD_KEYS` et `KIDLINK_SIGNING_KEY`, générées en local avec `python manage.py generate_keys` ;
-   - `KIDLINK_PUBLIC_URL`, seulement si vous utilisez un domaine personnalisé (sinon le domaine Railway est pris automatiquement) ;
-   - `DJANGO_ALLOWED_HOSTS`, avec ce même domaine personnalisé s'il y en a un.
+1. **+ New → Database → PostgreSQL**, puis dans le service web : **Variables → Add Variable Reference → `DATABASE_URL`**.
+2. Dans le service web, onglet **Variables**, ajoutez ces 3 variables avec exactement cette valeur. Railway génère alors lui-même un secret aléatoire :
+   - `DJANGO_SECRET_KEY` = `${{ secret(64) }}`
+   - `KIDLINK_FIELD_KEYS` = `${{ secret(64) }}`
+   - `KIDLINK_SIGNING_KEY` = `${{ secret(64) }}`
+
+   Notez ces valeurs générées dans un coffre-fort et **ne les changez plus jamais** : changer `KIDLINK_SIGNING_KEY` invalide les bracelets imprimés, changer `KIDLINK_FIELD_KEYS` rend les données illisibles.
+   (Les clés produites par `python manage.py generate_keys` fonctionnent aussi.)
 3. Après le premier déploiement, créez le développeur principal : `railway run python manage.py create_developer --email … --name …`.
 4. Ajoutez une tâche cron Railway pour la purge nocturne : `python manage.py purge_expired --grace 15`.
 
