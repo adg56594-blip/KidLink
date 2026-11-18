@@ -35,13 +35,19 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY est obligatoire en production.")
     SECRET_KEY = "dev-only-insecure-key-never-use-in-production-" + "x" * 20
 
+RAILWAY_DOMAIN = env("RAILWAY_PUBLIC_DOMAIN", "")
 ALLOWED_HOSTS = [h.strip() for h in env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+if RAILWAY_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
+    ALLOWED_HOSTS.append("healthcheck.railway.app")
 if TESTING:
     ALLOWED_HOSTS += ["testserver"]
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in env("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
+if RAILWAY_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_DOMAIN}")
 
 # Adresse publique utilisée dans les QR codes (sans barre finale).
-KIDLINK_PUBLIC_URL = env("KIDLINK_PUBLIC_URL", "http://localhost:8000").rstrip("/")
+KIDLINK_PUBLIC_URL = env("KIDLINK_PUBLIC_URL", f"https://{RAILWAY_DOMAIN}" if RAILWAY_DOMAIN else "http://localhost:8000").rstrip("/")
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -85,7 +91,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-if env("POSTGRES_DB"):
+if env("DATABASE_URL"):
+    from urllib.parse import unquote, urlparse
+
+    _u = urlparse(env("DATABASE_URL"))
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _u.path.lstrip("/"),
+            "USER": unquote(_u.username or ""),
+            "PASSWORD": unquote(_u.password or ""),
+            "HOST": _u.hostname,
+            "PORT": str(_u.port or 5432),
+            "CONN_MAX_AGE": 60,
+        }
+    }
+elif env("POSTGRES_DB"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -162,16 +183,17 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 if not DEV_MODE:
     SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT", True)
+    SECURE_REDIRECT_EXEMPT = [r"^healthz/$"]
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 63072000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    if env_bool("DJANGO_BEHIND_PROXY", False):
+    if env_bool("DJANGO_BEHIND_PROXY", bool(RAILWAY_DOMAIN)):
         SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Nombre de proxys de confiance devant l'application (pour lire la vraie IP).
-KIDLINK_TRUSTED_PROXIES = int(env("KIDLINK_TRUSTED_PROXIES", "0"))
+KIDLINK_TRUSTED_PROXIES = int(env("KIDLINK_TRUSTED_PROXIES", "1" if RAILWAY_DOMAIN else "0"))
 
 # ---------- Clés cryptographiques ----------
 # KIDLINK_FIELD_KEYS : une ou plusieurs clés Fernet séparées par des virgules

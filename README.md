@@ -80,6 +80,22 @@ python manage.py check --deploy           # avec les variables de production
 **Attention** : changer `KIDLINK_SIGNING_KEY` rend invalides tous les bracelets déjà imprimés.
 Changer le domaine de `KIDLINK_PUBLIC_URL` a le même effet sur les QR existants.
 
+## Déploiement sur Railway
+
+Railway redéploie automatiquement à chaque commit sur la branche qu'il surveille (souvent `main`).
+Le fichier `railway.json` s'occupe de tout : `collectstatic` pendant la construction, `migrate` avant le démarrage, puis gunicorn.
+Le contrôle de santé `/healthz/` empêche une version cassée de remplacer celle qui tourne.
+
+À faire **une seule fois** dans le projet Railway, avant de fusionner sur `main` :
+
+1. **+ New → Database → PostgreSQL**, puis reliez la variable `DATABASE_URL` au service web.
+2. Dans le service web, onglet **Variables**, ajoutez :
+   - `DJANGO_SECRET_KEY`, `KIDLINK_FIELD_KEYS` et `KIDLINK_SIGNING_KEY`, générées en local avec `python manage.py generate_keys` ;
+   - `KIDLINK_PUBLIC_URL`, seulement si vous utilisez un domaine personnalisé (sinon le domaine Railway est pris automatiquement) ;
+   - `DJANGO_ALLOWED_HOSTS`, avec ce même domaine personnalisé s'il y en a un.
+3. Après le premier déploiement, créez le développeur principal : `railway run python manage.py create_developer --email … --name …`.
+4. Ajoutez une tâche cron Railway pour la purge nocturne : `python manage.py purge_expired --grace 15`.
+
 ## Contacts
 
 - Administration (appel et WhatsApp) : +229 98 18 47 59

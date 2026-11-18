@@ -189,3 +189,12 @@ def robots(request):
 @require_GET
 def offline(request):
     return render(request, "public/offline.html")
+
+
+def healthz(request):
+    """Contrôle de santé Railway : vérifie que la base répond."""
+    from django.db import connection
+
+    with connection.cursor() as c:
+        c.execute("SELECT 1")
+    return HttpResponse("ok", content_type="text/plain")

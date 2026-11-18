@@ -65,6 +65,7 @@ urlpatterns = [
     path("sw.js", public.service_worker, name="sw"),
     path("manifest.webmanifest", public.manifest, name="manifest"),
     path("robots.txt", public.robots),
+    path("healthz/", public.healthz),
 ]
 
 handler403 = "core.views.errors.forbidden"
