@@ -1,4 +1,8 @@
+from datetime import datetime, timedelta
 from functools import wraps
+
+from django.conf import settings
+from django.utils import timezone
 
 from django.contrib.auth import logout
 from django.core.exceptions import PermissionDenied
@@ -24,6 +28,31 @@ CSP = "; ".join(
 
 STAFF_PREFIXES = ("/espace/", "/dev/")
 PRIVATE_PREFIXES = STAFF_PREFIXES + ("/i/", "/connexion", "/invitation/", "/inscription-administrateur/")
+
+
+MAX_2FA_PAUSE = timedelta(days=7)
+
+
+def two_factor_paused_until():
+    """Date de fin de la pause 2FA si elle est valide et en cours, sinon None.
+    Une date absurde (passée, illisible ou à plus de 7 jours) est ignorée : la 2FA reste active."""
+    raw = settings.KIDLINK_2FA_PAUSE_UNTIL
+    if not raw:
+        return None
+    for fmt in ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            until = timezone.make_aware(datetime.strptime(raw, fmt))
+            break
+        except ValueError:
+            continue
+    else:
+        return None
+    if fmt == "%Y-%m-%d":
+        until += timedelta(days=1)  # jusqu'à la fin de la journée indiquée
+    now = timezone.now()
+    if now < until <= now + MAX_2FA_PAUSE:
+        return until
+    return None
 
 
 class SecurityHeadersMiddleware:

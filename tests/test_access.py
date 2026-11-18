@@ -272,3 +272,22 @@ def test_predeploy_creates_one_time_lead_dev_link(db, capsys):
     assert Client().get(f"/invitation/{url}/").status_code == 404  # usage unique
     call_command("predeploy")
     assert "déjà présent" in capsys.readouterr().out  # plus aucun nouveau lien
+
+
+def test_2fa_pause_is_temporary_and_bounded(client, admin, settings):
+    from core.security import two_factor_paused_until
+
+    today = timezone.localdate()
+    settings.KIDLINK_2FA_PAUSE_UNTIL = (today + timedelta(days=1)).isoformat()
+    assert two_factor_paused_until()
+    r = client.post("/connexion/", {"email": admin.email, "password": PWD})
+    assert r.status_code == 302 and r["Location"] == "/espace/"
+    page = client.get("/espace/").content.decode()
+    assert "double authentification en pause" in page
+    # Date passée, trop lointaine ou illisible : la 2FA reste obligatoire
+    for bad in [(today - timedelta(days=1)).isoformat(), (today + timedelta(days=30)).isoformat(), "demain", ""]:
+        settings.KIDLINK_2FA_PAUSE_UNTIL = bad
+        assert two_factor_paused_until() is None
+        c = Client()
+        c.post("/connexion/", {"email": admin.email, "password": PWD})
+        assert c.get("/espace/").status_code == 302

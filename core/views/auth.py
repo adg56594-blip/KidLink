@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from .. import crypto
 from ..forms import ChangePasswordForm, LoginForm, OTPForm, SetPasswordForm
 from ..models import Invitation, User
+from ..security import two_factor_paused_until
 from ..utils import audit, client_ip, rate_limited, reset_rate
 
 
@@ -38,6 +39,10 @@ def login_view(request):
                 reset_rate(f"login-acc:{email}")
                 login(request, user)  # régénère l'identifiant de session
                 request.session["otp_ok"] = False
+                if two_factor_paused_until():
+                    request.session["otp_ok"] = True
+                    audit(request, "login_ok_2fa_paused")
+                    return redirect(_home_for(user))
                 nxt = request.GET.get("next", "")
                 if url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
                     request.session["after_otp"] = nxt
@@ -68,6 +73,10 @@ def otp_view(request):
     if not user.is_authenticated:
         return redirect("auth:login")
     if request.session.get("otp_ok"):
+        return redirect(_home_for(user))
+    if two_factor_paused_until():
+        request.session["otp_ok"] = True
+        audit(request, "login_ok_2fa_paused")
         return redirect(_home_for(user))
     enrolling = not user.totp_confirmed
     if enrolling and not request.session.get("totp_pending"):
@@ -154,6 +163,9 @@ def accept_invitation(request, token):
         audit(request, "account_created", f"{user.title} : {user.email}", actor=user)
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         request.session["otp_ok"] = False
+        if two_factor_paused_until():
+            request.session["otp_ok"] = True
+            return redirect(_home_for(user))
         return redirect("auth:otp")
     tpl = {
         Invitation.PRINCIPAL_ADMIN: "auth/register_admin.html",

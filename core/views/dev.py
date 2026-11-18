@@ -13,7 +13,7 @@ from .. import crypto
 from ..forms import DeliveryForm, InviteForm, RolesForm, SettingsForm
 from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, SiteSettings, User
 from ..roles import DEV_ASSIGNABLE, clean_roles
-from ..security import lead_dev_required, role_required
+from ..security import lead_dev_required, role_required, two_factor_paused_until
 from ..utils import audit
 from .espace import pdf_response
 
@@ -31,6 +31,7 @@ def dashboard(request):
         ("Clé de chiffrement fournie par l'environnement", bool(settings.KIDLINK_FIELD_KEYS)),
         ("Clé de signature fournie par l'environnement", bool(settings.KIDLINK_SIGNING_KEY)),
         ("Adresse publique en HTTPS", settings.KIDLINK_PUBLIC_URL.startswith("https://")),
+        ("Double authentification active (pas de pause de test)", not two_factor_paused_until()),
         ("Administrateur principal créé", User.objects.filter(kind=User.ADMIN, is_principal=True).exists()),
     ]
     data = {

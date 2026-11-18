@@ -197,6 +197,9 @@ if not DEV_MODE:
         SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Nombre de proxys de confiance devant l'application (pour lire la vraie IP).
+# Pause TEMPORAIRE de la double authentification (tests) : date de fin, 7 jours maximum.
+# Ex. KIDLINK_2FA_PAUSE_UNTIL=2026-11-20  -> la 2FA revient toute seule à cette date.
+KIDLINK_2FA_PAUSE_UNTIL = env("KIDLINK_2FA_PAUSE_UNTIL", "").strip()
 KIDLINK_TRUSTED_PROXIES = int(env("KIDLINK_TRUSTED_PROXIES", "1" if RAILWAY_DOMAIN else "0"))
 
 # ---------- Clés cryptographiques ----------

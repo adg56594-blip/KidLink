@@ -31,6 +31,7 @@
       <div class="app-actions">{% block actions %}{% endblock %}</div>
     </header>
     {% include "partials/messages.html" %}
+    {% if twofa_paused_until %}<div class="pause-banner" role="alert"><svg class="ic"><use href="#i-alert"/></svg><span><b>Mode test :</b> double authentification en pause jusqu'au {{ twofa_paused_until|date:"j F Y à H:i" }}. Supprimez la variable <code>KIDLINK_2FA_PAUSE_UNTIL</code> dans Railway pour la réactiver avant.</span></div>{% endif %}
     <div class="app-content" id="main">{% block content %}{% endblock %}</div>
   </div>
 </div>
