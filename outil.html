@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bracelets QR – Pèlerinage</title>
+<script>
+/* Bibliothèque QR : CDN principal, puis CDN de secours */
+(function(){
+  function load(src, onfail){
+    var s=document.createElement('script'); s.src=src; s.async=false;
+    s.onerror=onfail||function(){}; document.head.appendChild(s);
+  }
+  load('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js', function(){
+    load('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js');
+  });
+})();
+</script>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#EEF4F8; --card:#FFFFFF; --ink:#12283B; --muted:#55697A; --line:#C9D7E2;
+  --accent:#1A5E9A; --accent-ink:#FFFFFF; --band:#E3EEF7;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --bg:#0E1A26; --card:#15263A; --ink:#E6EEF5; --muted:#9DB0C2; --line:#2A4058;
+    --accent:#6FB3EA; --accent-ink:#0E1A26; --band:#1B3249;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Avenir Next","Segoe UI",system-ui,Roboto,sans-serif;line-height:1.5}
+main{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:8px 0 4px}
+.sub{color:var(--muted);margin:0 0 20px;max-width:60ch}
+.grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:820px){.grid{grid-template-columns:1.1fr .9fr;align-items:start}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.panel h2{font-size:1.05rem;margin:0 0 12px}
+label{display:block;font-size:.9rem;font-weight:600;margin:10px 0 4px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:420px){.row{grid-template-columns:1fr}}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button,.btn{font:inherit;font-weight:600;border-radius:8px;padding:9px 14px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.ghost,.btn.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.hint{color:var(--muted);font-size:.85rem;margin:10px 0 0}
+.warn{color:#b45309;font-size:.88rem;margin:10px 0 0}
+.empty{color:var(--muted);margin:0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+td button{padding:5px 10px;font-size:.85rem}
+td.act{white-space:nowrap}
+td.act button+button{margin-left:6px}
+.tablewrap{overflow-x:auto}
+.band2{background:var(--band);border:1px solid var(--line);border-radius:24px;padding:14px}
+.qrpair{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.qrpair figure{margin:0;text-align:center}
+.qrpair figcaption{font-size:.85rem;margin-top:4px;color:var(--muted)}
+.qrbox{background:#fff;padding:8px;border-radius:12px;line-height:0;width:124px;height:124px;display:flex;align-items:center;justify-content:center;color:#55697A;font-size:.75rem;line-height:1.2;text-align:center}
+.qrbox img{width:108px;height:108px;display:block}
+.bandtxt{text-align:center;margin-top:10px;font-size:.9rem}
+.bandtxt strong{display:block;font-size:1.05rem;overflow-wrap:anywhere}
+
+/* ---------- Impression ---------- */
+#sheet{display:none}
+@page{size:A4;margin:8mm}
+@media print{
+  html,body{background:#fff !important;color:#000 !important}
+  main{display:none !important}
+  #sheet{display:grid;grid-template-columns:1fr 1fr;gap:6mm;padding:0}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .label{display:flex;flex-direction:column;align-items:center;gap:2mm;border:1px dashed #666;border-radius:6mm;padding:4mm;break-inside:avoid;page-break-inside:avoid;color:#000;background:#fff}
+  .label img{width:38mm;height:38mm;display:block}
+  .label .lt{font-size:9pt;line-height:1.3;text-align:center;overflow-wrap:anywhere}
+  .label .lt b{font-size:12pt;display:block}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Bracelets QR du pèlerinage</h1>
+  <p class="sub">Tapez les informations de chaque pèlerin : le QR code se crée tout seul. Sur le bracelet, on voit seulement le QR code et le nom ; les autres informations s'affichent après avoir scanné le QR code.</p>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="t-form">
+      <h2 id="t-form">Informations du pèlerin</h2>
+      <label for="base">Adresse de la page scan.html (à écrire une seule fois)</label>
+      <input id="base" type="url" placeholder="https://votre-site.netlify.app/scan.html" autocomplete="off">
+      <div class="row">
+        <div><label for="nom">Nom</label><input id="nom" autocomplete="off"></div>
+        <div><label for="prenom">Prénom</label><input id="prenom" autocomplete="off"></div>
+      </div>
+      <div class="row">
+        <div><label for="parents">Nom des parents</label><input id="parents" autocomplete="off"></div>
+        <div><label for="telParents">Numéro des parents</label><input id="telParents" type="tel" inputmode="tel" placeholder="+229 ..." autocomplete="off"></div>
+      </div>
+      <div class="row">
+        <div><label for="charge">Chargé responsable</label><input id="charge" autocomplete="off"></div>
+        <div><label for="telCharge">Numéro du chargé</label><input id="telCharge" type="tel" inputmode="tel" placeholder="+229 ..." autocomplete="off"></div>
+      </div>
+      <label for="eglise">Église</label>
+      <input id="eglise" autocomplete="off">
+    </section>
+
+    <section class="panel" aria-labelledby="t-prev">
+      <h2 id="t-prev">Aperçu du bracelet</h2>
+      <div class="band2">
+        <div class="qrpair">
+          <figure><div class="qrbox" id="preview" aria-label="QR code du pèlerin"></div></figure>
+        </div>
+        <div class="bandtxt">
+          <strong id="pName">Nom et prénom</strong>
+        </div>
+      </div>
+      <p class="hint" id="count"></p>
+      <p class="warn" id="libwarn" hidden>La bibliothèque des QR codes n'a pas pu se charger. Vérifiez votre connexion internet puis rechargez la page.</p>
+      <div class="btns">
+        <button id="add" type="button" disabled>Ajouter à la liste</button>
+        <button id="printOne" type="button" class="ghost" disabled>Imprimer ce bracelet</button>
+        <button id="dl" type="button" class="ghost" disabled>Télécharger l'image</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px" aria-labelledby="t-list">
+    <h2 id="t-list">Liste des bracelets (<span id="n">0</span>)</h2>
+    <p class="empty" id="empty">Aucun pèlerin ajouté.</p>
+    <div class="tablewrap"><table id="tbl" hidden>
+      <thead><tr><th>Nom et prénom</th><th>Église</th><th>Numéro des parents</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="btns">
+      <button id="print" type="button" disabled>Imprimer tous les bracelets</button>
+      <button id="export" type="button" class="ghost" disabled>Exporter en CSV</button>
+      <label class="btn ghost" style="margin:0">Importer un CSV<input id="import" type="file" accept=".csv,text/csv" hidden></label>
+      <button id="clear" type="button" class="ghost" disabled>Vider la liste</button>
+    </div>
+    <p class="hint">La liste est gardée sur cet appareil, mais pensez à exporter le CSV par sécurité. Colonnes du CSV : nom, prenom, parents, telParents, charge, telCharge, eglise.</p>
+  </section>
+</main>
+
+<div id="sheet" aria-hidden="true"></div>
+
+<script>
+(function () {
+'use strict';
+var FIELDS = ['nom','prenom','parents','telParents','charge','telCharge','eglise'];
+var STORE = 'pelerinage-bracelets-v2';
+function $(id){ return document.getElementById(id); }
+var people = [];
+
+/* ---------- Données ---------- */
+function readForm(){
+  var p = {};
+  FIELDS.forEach(function(f){ p[f] = $(f).value.replace(/\s+/g,' ').trim(); });
+  return p;
+}
+function validPerson(p){ return !!(p && p.nom && p.prenom && p.telParents); }
+function needBase(){ if (!baseOk()){ alert("Indiquez d'abord l'adresse de la page scan.html."); return true; } return false; }
+function baseUrl(){ return $('base').value.trim(); }
+function baseOk(){ return /^https?:\/\/\S+$/i.test(baseUrl()); }
+function fullName(p){ return (p.prenom + ' ' + p.nom).trim(); }
+
+function toLink(p){
+  var map = {n:'nom', p:'prenom', pa:'parents', t:'telParents', c:'charge', tc:'telCharge', e:'eglise'};
+  var q = Object.keys(map).filter(function(k){ return p[map[k]]; })
+    .map(function(k){ return k + '=' + encodeURIComponent(p[map[k]]); }).join('&');
+  return baseUrl() + '#' + q;
+}
+
+/* ---------- Sauvegarde locale ---------- */
+function save(){
+  try { localStorage.setItem(STORE, JSON.stringify({base: baseUrl(), people: people})); } catch (e) {}
+}
+function load(){
+  try {
+    var d = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (d){
+      if (d.base) $('base').value = d.base;
+      if (Array.isArray(d.people)) people = d.people.filter(validPerson);
+    }
+  } catch (e) {}
+}
+
+/* ---------- QR codes (synchrones, sans dépendre de l'<img> de la bibliothèque) ---------- */
+function makeQR(text, size){
+  if (typeof QRCode === 'undefined') return null;
+  try {
+    var d = document.createElement('div');
+    new QRCode(d, {text: text, width: size, height: size, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M});
+    return d.querySelector('canvas');
+  } catch (e) { return null; }
+}
+function qrImg(text, size, alt){
+  var c = makeQR(text, size);
+  if (!c) return null;
+  var img = new Image();
+  img.src = c.toDataURL('image/png');
+  img.alt = alt || '';
+  return img;
+}
+function showQR(box, text, alt, emptyMsg){
+  box.innerHTML = '';
+  if (!text){ box.textContent = emptyMsg || ''; return; }
+  var img = qrImg(text, 300, alt);
+  if (img) box.appendChild(img); else box.textContent = 'QR indisponible';
+}
+
+/* ---------- Aperçu ---------- */
+var timer;
+function updateButtons(){
+  var ok = validPerson(readForm());
+  $('add').disabled = !ok; $('dl').disabled = !ok; $('printOne').disabled = !ok;
+}
+function refresh(){
+  updateButtons();
+  clearTimeout(timer);
+  timer = setTimeout(function(){
+    var p = readForm();
+    var ok = validPerson(p);
+    $('libwarn').hidden = (typeof QRCode !== 'undefined');
+    $('pName').textContent = (p.nom || p.prenom) ? fullName(p) : 'Nom et prénom';
+    if (!ok){
+      showQR($('preview'), '', '', '');
+      $('count').textContent = 'Renseignez au moins le nom, le prénom et le numéro des parents pour créer les QR codes.';
+      return;
+    }
+    showQR($('preview'), baseOk() ? toLink(p) : '', 'QR code du pèlerin', "Indiquez l'adresse de scan.html");
+    $('count').textContent = baseOk()
+      ? 'QR code prêt.'
+      : "Pour créer le QR code, indiquez l'adresse de scan.html.";
+  }, 120);
+}
+
+/* ---------- Liste ---------- */
+function renderList(){
+  $('n').textContent = people.length;
+  var has = people.length > 0;
+  $('empty').hidden = has; $('tbl').hidden = !has;
+  $('print').disabled = !has; $('export').disabled = !has; $('clear').disabled = !has;
+  var tb = $('rows'); tb.innerHTML = '';
+  people.forEach(function(p, i){
+    var tr = document.createElement('tr');
+    [fullName(p), p.eglise, p.telParents].forEach(function(v){
+      var td = document.createElement('td'); td.textContent = v || ''; tr.appendChild(td);
+    });
+    var td = document.createElement('td'); td.className = 'act';
+    var bp = document.createElement('button'); bp.type = 'button'; bp.className = 'ghost'; bp.textContent = 'Imprimer';
+    bp.addEventListener('click', function(){ printPeople([p]); });
+    var br = document.createElement('button'); br.type = 'button'; br.className = 'ghost'; br.textContent = 'Retirer';
+    br.addEventListener('click', function(){ people.splice(i, 1); save(); renderList(); });
+    td.appendChild(bp); td.appendChild(br); tr.appendChild(td); tb.appendChild(tr);
+  });
+}
+
+$('add').addEventListener('click', function(){
+  var p = readForm();
+  if (!validPerson(p)) return;
+  people.push(p);
+  ['nom','prenom','parents','telParents'].forEach(function(f){ $(f).value = ''; });
+  save(); renderList(); refresh(); $('nom').focus();
+});
+
+$('clear').addEventListener('click', function(){
+  if (people.length && confirm('Vider toute la liste des bracelets ?')){ people = []; save(); renderList(); }
+});
+
+/* ---------- Impression ---------- */
+function buildLabel(p){
+  var l = document.createElement('div'); l.className = 'label';
+  var img = qrImg(toLink(p), 400, 'QR code de ' + fullName(p));
+  if (img) l.appendChild(img);
+  var t = document.createElement('div'); t.className = 'lt';
+  var b = document.createElement('b'); b.textContent = fullName(p); t.appendChild(b);
+  l.appendChild(t);
+  return l;
+}
+
+function printPeople(list){
+  if (!list.length) return;
+  if (needBase()) return;
+  if (typeof QRCode === 'undefined'){ alert("La bibliothèque des QR codes n'est pas chargée. Vérifiez internet et rechargez la page."); return; }
+  var sheet = $('sheet'); sheet.innerHTML = '';
+  list.forEach(function(p){ sheet.appendChild(buildLabel(p)); });
+  var imgs = Array.prototype.slice.call(sheet.querySelectorAll('img'));
+  Promise.all(imgs.map(function(i){ return i.decode ? i.decode().catch(function(){}) : Promise.resolve(); }))
+    .then(function(){ setTimeout(function(){ window.print(); }, 100); });
+}
+window.addEventListener('afterprint', function(){ $('sheet').innerHTML = ''; });
+
+$('print').addEventListener('click', function(){ printPeople(people); });
+$('printOne').addEventListener('click', function(){
+  var p = readForm(); if (validPerson(p)) printPeople([p]);
+});
+
+/* ---------- Télécharger l'image du bracelet (un seul PNG) ---------- */
+$('dl').addEventListener('click', function(){
+  var p = readForm(); if (!validPerson(p)) return;
+  if (typeof QRCode === 'undefined'){ alert("La bibliothèque des QR codes n'est pas chargée."); return; }
+  if (needBase()) return;
+  var S = 420, W = 600, H = 640;
+  var c = document.createElement('canvas'); c.width = W; c.height = H;
+  var x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+  x.strokeStyle = '#666'; x.lineWidth = 3; x.setLineDash([14, 9]); x.strokeRect(12, 12, W - 24, H - 24); x.setLineDash([]);
+  x.textAlign = 'center'; x.fillStyle = '#000';
+  var q = makeQR(toLink(p), S);
+  if (q){ x.imageSmoothingEnabled = false; x.drawImage(q, (W - S) / 2, 50, S, S); }
+  x.font = 'bold 44px sans-serif'; x.fillText(fullName(p), W / 2, 560, W - 60);
+  c.toBlob(function(blob){
+    if (!blob) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bracelet-' + fullName(p).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }, 'image/png');
+});
+
+/* ---------- CSV ---------- */
+function csvEscape(v){ v = String(v || '').replace(/"/g, '""'); return /[",;\n\r]/.test(v) ? '"' + v + '"' : v; }
+$('export').addEventListener('click', function(){
+  var rows = [FIELDS.join(',')].concat(people.map(function(p){ return FIELDS.map(function(f){ return csvEscape(p[f]); }).join(','); }));
+  var blob = new Blob(['\ufeff' + rows.join('\r\n')], {type: 'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'bracelets.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+});
+
+function parseCSV(text){
+  var first = text.split(/\r?\n/)[0] || '';
+  var sep = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+  var out = [], row = [], cur = '', q = false;
+  for (var i = 0; i < text.length; i++){
+    var ch = text[i];
+    if (q){
+      if (ch === '"' && text[i+1] === '"'){ cur += '"'; i++; }
+      else if (ch === '"') q = false;
+      else cur += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === sep){ row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r'){
+      if (ch === '\r' && text[i+1] === '\n') i++;
+      row.push(cur); cur = '';
+      if (row.some(function(c){ return c.trim(); })) out.push(row);
+      row = [];
+    } else cur += ch;
+  }
+  row.push(cur);
+  if (row.some(function(c){ return c.trim(); })) out.push(row);
+  return out;
+}
+
+$('import').addEventListener('change', function(e){
+  var file = e.target.files[0]; if (!file) return;
+  var r = new FileReader();
+  r.onload = function(){
+    var rows = parseCSV(String(r.result).replace(/^\ufeff/, ''));
+    if (rows.length < 2){ alert('Fichier CSV vide ou illisible.'); return; }
+    var head = rows[0].map(function(h){ return h.trim().toLowerCase(); });
+    var added = 0;
+    rows.slice(1).forEach(function(cols){
+      var p = {};
+      FIELDS.forEach(function(f){
+        var i = head.indexOf(f.toLowerCase());
+        p[f] = i >= 0 ? (cols[i] || '').replace(/\s+/g,' ').trim() : '';
+      });
+      if (validPerson(p)){ people.push(p); added++; }
+    });
+    save(); renderList();
+    alert(added + ' pèlerin(s) importé(s).');
+    e.target.value = '';
+  };
+  r.readAsText(file);
+});
+
+/* ---------- Démarrage ---------- */
+FIELDS.forEach(function(f){ $(f).addEventListener('input', refresh); });
+$('base').addEventListener('input', function(){ save(); refresh(); });
+load();
+if (!$('base').value && /^https?:/.test(location.protocol)){
+  $('base').value = location.origin + location.pathname.replace(/[^\/]*$/, '') + 'scan.html';
+}
+renderList(); refresh();
+// Si la bibliothèque arrive un peu plus tard, on redessine
+window.addEventListener('load', refresh);
+})();
+</script>
+</body>
+</html>
