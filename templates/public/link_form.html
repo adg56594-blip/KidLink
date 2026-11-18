@@ -1,0 +1,83 @@
+{% extends "base.html" %}{% load static kl %}
+{% block title %}Inscription · {{ event.title }}{% endblock %}
+{% block body_class %}page-link{% endblock %}
+{% block body %}
+<main id="main" class="link-wrap">
+  <header class="link-hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <img class="link-logo" src="{% static 'img/ecc-logo.webp' %}" alt="Église du Christianisme Céleste" width="96" height="100">
+    <p class="kicker light"><span class="dot"></span> Inscription officielle KidLink</p>
+    <h1>{{ event.title }}</h1>
+    <p class="link-meta"><svg class="ic"><use href="#i-pin"/></svg>{{ event.location }} <span>·</span> <svg class="ic"><use href="#i-cal"/></svg>{{ event.starts_on|date:"j F Y" }}</p>
+    <p class="link-for">Lien réservé à <strong>{{ link.label }}</strong></p>
+
+    <div class="quota">
+      <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
+        <circle cx="60" cy="60" r="52" class="ring-bg"/>
+        <circle cx="60" cy="60" r="52" class="ring-fg" pathLength="100" stroke-dasharray="{{ names|length|pct:link.quota }} 100"/>
+      </svg>
+      <div class="quota-txt"><b>{{ names|length }}</b><span>sur {{ link.quota }}</span></div>
+      <p class="quota-left">{% if link.remaining == 1 %}Il reste <strong>1 place</strong>{% else %}Il reste <strong>{{ link.remaining }} places</strong>{% endif %}</p>
+    </div>
+  </header>
+
+  {% include "partials/messages.html" %}
+
+  {% if just_added %}
+  <div class="added reveal" role="status">
+    <span class="added-ic"><svg class="ic"><use href="#i-check"/></svg></span>
+    <div><strong>{{ just_added }} est bien inscrit(e).</strong><span>Son bracelet sera préparé. Vous pouvez inscrire l'enfant suivant ci-dessous.</span></div>
+  </div>
+  {% endif %}
+
+  <form method="post" class="child-form card-glass" novalidate autocomplete="off">
+    {% csrf_token %}
+    {{ form.confirm_duplicate }}
+    {% if duplicate %}
+    <div class="warn-box" role="alert"><svg class="ic"><use href="#i-alert"/></svg><div><strong>Cet enfant est déjà inscrit sur ce lien.</strong> S'il s'agit d'un autre enfant avec le même nom, appuyez encore sur « Enregistrer ». Sinon, changez le nom.</div></div>
+    {% endif %}
+    {% if form.non_field_errors %}<div class="warn-box">{{ form.non_field_errors }}</div>{% endif %}
+
+    <fieldset class="fs c-orange">
+      <legend><span class="fs-ic"><svg class="ic"><use href="#i-child"/></svg></span> L'enfant</legend>
+      <div class="grid2">
+        {% include "partials/field.html" with field=form.nom %}
+        {% include "partials/field.html" with field=form.prenom %}
+      </div>
+    </fieldset>
+
+    <fieldset class="fs c-green">
+      <legend><span class="fs-ic"><svg class="ic"><use href="#i-phone"/></svg></span> Qui appeler ?</legend>
+      {% include "partials/field.html" with field=form.parent_name %}
+      <div class="grid2">
+        {% include "partials/field.html" with field=form.parent_phone %}
+        {% include "partials/field.html" with field=form.parent_phone2 %}
+      </div>
+    </fieldset>
+
+    <fieldset class="fs c-blue">
+      <legend><span class="fs-ic"><svg class="ic"><use href="#i-home"/></svg></span> La paroisse</legend>
+      {% include "partials/field.html" with field=form.paroisse %}
+      <details class="optional"{% if form.charge_name.value or form.charge_phone.value or form.charge_phone.errors %} open{% endif %}>
+        <summary>Je connais le chargé de l'enfant <em>(facultatif)</em></summary>
+        <div class="grid2">
+          {% include "partials/field.html" with field=form.charge_name %}
+          {% include "partials/field.html" with field=form.charge_phone %}
+        </div>
+      </details>
+    </fieldset>
+
+    <button class="btn btn-primary btn-xl btn-block" type="submit"><svg class="ic"><use href="#i-check"/></svg> Enregistrer cet enfant</button>
+    <p class="privacy"><svg class="ic"><use href="#i-lock"/></svg> Vos informations sont chiffrées, servent uniquement à retrouver l'enfant, et sont effacées après l'événement.</p>
+    <button class="speak" type="button" data-speak="Écrivez le nom et le prénom de l'enfant. Ensuite, écrivez le nom du papa ou de la maman et le numéro de téléphone à appeler si l'enfant se perd. Puis écrivez le nom de la paroisse. Appuyez enfin sur le gros bouton bleu Enregistrer. Recommencez pour chaque enfant."><svg class="ic"><use href="#i-sound"/></svg> Écouter les explications</button>
+  </form>
+
+  {% if names %}
+  <section class="already">
+    <h2>Déjà inscrits sur ce lien</h2>
+    <ul class="chips">{% for n in names %}<li><svg class="ic"><use href="#i-check"/></svg>{{ n }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+  <p class="scan-foot">Un problème ? <a href="https://wa.me/{{ admin_wa }}" target="_blank" rel="noopener noreferrer">Écrire à l'administration</a></p>
+</main>
+{% endblock %}

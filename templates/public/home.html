@@ -1,0 +1,109 @@
+{% extends "base.html" %}{% load static kl %}
+{% block title %}Le bracelet qui ramène l'enfant à sa famille{% endblock %}
+{% block body_class %}page-public{% endblock %}
+{% block body %}
+{% include "public/_topbar.html" %}
+<main id="main">
+
+<section class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-text reveal">
+    <p class="kicker"><span class="dot"></span> Église du Christianisme Céleste</p>
+    <h1>Aucun enfant ne doit <em>se perdre</em>.</h1>
+    <p class="lead">Un bracelet au poignet. Un passant le scanne avec son téléphone, et il appelle tout de suite le papa ou la maman. Même sans internet.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary btn-lg" href="https://wa.me/{{ admin_wa }}?text={{ 'Bonjour, je souhaite obtenir des bracelets KidLink pour mes enfants.'|urlencode }}" target="_blank" rel="noopener noreferrer">
+        <svg class="ic"><use href="#i-wa"/></svg> Obtenir un bracelet</a>
+      <a class="btn btn-light btn-lg" href="tel:+{{ admin_phone_tel }}"><svg class="ic"><use href="#i-phone"/></svg> Appeler</a>
+    </div>
+    <button class="speak" type="button" data-speak="Bienvenue sur KidLink. Un bracelet avec un code est mis au poignet de votre enfant. Si l'enfant se perd, n'importe qui scanne le bracelet avec son téléphone et vous appelle tout de suite. Pour avoir un bracelet, appuyez sur le bouton vert et parlez à l'administration."><svg class="ic"><use href="#i-sound"/></svg> Écouter</button>
+  </div>
+
+  <div class="hero-art reveal" aria-hidden="true">
+    <svg class="arcs" viewBox="0 0 400 230">
+      <path pathLength="1" d="M20 220a180 180 0 0 1 360 0" class="a1"/>
+      <path pathLength="1" d="M42 220a158 158 0 0 1 316 0" class="a2"/>
+      <path pathLength="1" d="M64 220a136 136 0 0 1 272 0" class="a3"/>
+      <path pathLength="1" d="M86 220a114 114 0 0 1 228 0" class="a4"/>
+      <path pathLength="1" d="M108 220a92 92 0 0 1 184 0" class="a5"/>
+      <path pathLength="1" d="M130 220a70 70 0 0 1 140 0" class="a6"/>
+    </svg>
+    <img class="hero-logo" src="{% static 'img/ecc-logo.webp' %}" alt="" width="220" height="228">
+    <div class="band-card float">
+      <div class="band-qr"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <div><strong>Bracelet authentique</strong><small>Vérifié · signé KidLink</small></div>
+      <svg class="ic ok"><use href="#i-shield"/></svg>
+    </div>
+    <div class="call-card float-slow">
+      <svg class="ic"><use href="#i-phone"/></svg>
+      <div><strong>Appeler la maman</strong><small>en un seul geste</small></div>
+    </div>
+  </div>
+</section>
+
+{% if featured %}
+<section class="spotlight reveal" aria-labelledby="ev-title">
+  <div class="spot-ribbon" aria-hidden="true"></div>
+  <div class="spot-main">
+    <p class="spot-kicker">Événement à venir</p>
+    <h2 id="ev-title">{{ featured.title }}</h2>
+    <ul class="spot-meta">
+      <li><svg class="ic"><use href="#i-pin"/></svg>{{ featured.location }}</li>
+      <li><svg class="ic"><use href="#i-cal"/></svg>{% if featured.starts_on == featured.ends_on %}Le {{ featured.starts_on|date:"j F Y" }}{% else %}Du {{ featured.starts_on|date:"j F" }} au {{ featured.ends_on|date:"j F Y" }}{% endif %}</li>
+      {% if featured.registration_deadline %}<li><svg class="ic"><use href="#i-clock"/></svg>Inscriptions jusqu'au {{ featured.registration_deadline|date:"j F" }}</li>{% endif %}
+    </ul>
+    {% if featured.description %}<p class="spot-desc">{{ featured.description|linebreaksbr }}</p>{% endif %}
+    <div class="spot-cta">
+      <a class="btn btn-primary btn-lg" href="https://wa.me/{{ admin_wa }}?text={% filter urlencode %}Bonjour, je souhaite inscrire mes enfants pour : {{ featured.title }}. Combien d'enfants puis-je inscrire ?{% endfilter %}" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-wa"/></svg> Réserver mes bracelets</a>
+      {% if featured.price_per_child %}<p class="price"><strong>{{ featured.price_per_child|fcfa }}</strong> par enfant</p>{% endif %}
+    </div>
+  </div>
+  <div class="countdown" data-countdown="{{ featured.starts_on|date:'Y-m-d' }}T06:00:00">
+    <p class="cd-label">Le départ dans</p>
+    <div class="cd-grid">
+      <div><b data-cd="d">--</b><span>jours</span></div>
+      <div><b data-cd="h">--</b><span>heures</span></div>
+      <div><b data-cd="m">--</b><span>min</span></div>
+      <div><b data-cd="s">--</b><span>sec</span></div>
+    </div>
+    <p class="cd-live" hidden>L'événement a commencé. Gardez le bracelet au poignet de l'enfant !</p>
+  </div>
+</section>
+{% for ev in events|slice:"1:" %}
+<div class="mini-event reveal"><svg class="ic"><use href="#i-cal"/></svg><strong>{{ ev.title }}</strong><span>{{ ev.location }} · {{ ev.starts_on|date:"j F Y" }}</span></div>
+{% endfor %}
+{% endif %}
+
+<section class="steps" aria-labelledby="how">
+  <h2 id="how" class="section-title reveal">Comment ça marche&nbsp;?</h2>
+  <ol class="step-grid">
+    <li class="step reveal c-red"><span class="step-n">1</span><span class="step-ic"><svg class="ic"><use href="#i-cash"/></svg></span><h3>Je paie</h3><p>Auprès de l'administration ou du chargé de ma paroisse.</p></li>
+    <li class="step reveal c-orange"><span class="step-n">2</span><span class="step-ic"><svg class="ic"><use href="#i-form"/></svg></span><h3>Je remplis</h3><p>On m'envoie un lien. J'écris le nom de l'enfant et mon numéro. C'est tout.</p></li>
+    <li class="step reveal c-green"><span class="step-n">3</span><span class="step-ic"><svg class="ic"><use href="#i-band"/></svg></span><h3>Il porte le bracelet</h3><p>Pendant tout le pèlerinage, au poignet de l'enfant.</p></li>
+    <li class="step reveal c-blue"><span class="step-n">4</span><span class="step-ic"><svg class="ic"><use href="#i-phone"/></svg></span><h3>On m'appelle</h3><p>S'il se perd, quelqu'un scanne le bracelet et m'appelle directement.</p></li>
+  </ol>
+</section>
+
+<section class="finder reveal" aria-labelledby="finder">
+  <div class="finder-in">
+    <svg class="ic big"><use href="#i-child"/></svg>
+    <div>
+      <h2 id="finder">Vous avez trouvé un enfant seul&nbsp;?</h2>
+      <p>Ouvrez l'appareil photo de votre téléphone et visez le code de son bracelet. Ou appuyez ici :</p>
+    </div>
+    <a class="btn btn-sun btn-lg" href="{% url 'public:scanner' %}"><svg class="ic"><use href="#i-scan"/></svg> Scanner le bracelet</a>
+  </div>
+</section>
+
+<section class="trust" aria-labelledby="trust">
+  <h2 id="trust" class="section-title reveal">Pensé pour protéger vos enfants</h2>
+  <div class="trust-grid">
+    <article class="reveal"><svg class="ic"><use href="#i-shield"/></svg><h3>Infalsifiable</h3><p>Chaque bracelet porte une signature numérique. Une copie modifiée est détectée tout de suite.</p></article>
+    <article class="reveal"><svg class="ic"><use href="#i-scan"/></svg><h3>Marche sans internet</h3><p>Les informations sont dans le bracelet lui-même. Sur la plage, même sans réseau, on peut vous appeler.</p></article>
+    <article class="reveal"><svg class="ic"><use href="#i-lock"/></svg><h3>Données protégées</h3><p>Tout est chiffré, et effacé après l'événement. Personne ne revend vos informations.</p></article>
+    <article class="reveal"><svg class="ic"><use href="#i-heart"/></svg><h3>Simple pour tous</h3><p>Des images, des gros boutons et une voix qui explique. Pas besoin de savoir lire.</p></article>
+  </div>
+</section>
+</main>
+{% include "partials/footer.html" %}
+{% endblock %}

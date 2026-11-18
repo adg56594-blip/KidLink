@@ -1,0 +1,22 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Activer mon compte{% endblock %}
+{% block auth %}
+<div class="auth-card wide">
+  <p class="kicker"><span class="dot"></span> Invitation de {{ inv.created_by.full_name }}</p>
+  <h1>Activez votre compte {{ inv.get_kind_display|lower }}</h1>
+  <p class="muted">Choisissez un mot de passe solide. Vous configurerez ensuite la double authentification.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.full_name %}
+      {% include "partials/field.html" with field=form.phone %}
+    </div>
+    {% include "partials/field.html" with field=form.email %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.password1 %}
+      {% include "partials/field.html" with field=form.password2 %}
+    </div>
+    <button class="btn btn-primary btn-lg btn-block" type="submit"><svg class="ic"><use href="#i-check"/></svg> Activer mon compte</button>
+  </form>
+</div>
+{% endblock %}

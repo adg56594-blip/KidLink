@@ -1,0 +1,43 @@
+{% extends "dev/base.html" %}
+{% block title %}Livraison des PDF{% endblock %}
+{% block page_title %}Livraison des PDF{% endblock %}
+{% block content %}
+<p class="intro">Vous décidez quand l'administration reçoit le PDF de chaque lot : tout de suite, après un délai, à une date programmée, ou seulement quand vous le libérez. Le réglage par défaut des nouveaux lots se change dans Réglages.</p>
+<nav class="tabs">
+  <a href="?f=pending" {% if f == 'pending' %}aria-current="page"{% endif %}>En attente</a>
+  <a href="?f=released" {% if f == 'released' %}aria-current="page"{% endif %}>Livrés</a>
+  <a href="?f=all" {% if f == 'all' %}aria-current="page"{% endif %}>Tous</a>
+</nav>
+{% if rows %}
+<form method="post" action="{% url 'dev:deliveries_bulk' %}" class="panel table-panel">
+  {% csrf_token %}
+  <table class="table">
+    <thead><tr><th></th><th>Lot</th><th>Inscrits</th><th>Règle</th><th>Disponible pour l'admin</th><th></th></tr></thead>
+    <tbody>
+    {% for l in rows %}
+    <tr>
+      <td>{% if can.deliveries %}<input type="checkbox" name="ids" value="{{ l.pk }}" aria-label="Sélectionner {{ l.label }}">{% endif %}</td>
+      <td><strong>{{ l.label }}</strong><small>{{ l.event.title }}</small></td>
+      <td><b>{{ l.n }}</b>/{{ l.quota }}</td>
+      <td><span class="tag">{{ l.get_delivery_mode_display }}{% if l.delivery_mode == 'delayed' %} · {{ l.delivery_delay_hours }} h{% endif %}</span></td>
+      <td>{% if l.is_released %}<span class="pill pill-actif">Livré</span>{% elif l.release_at %}{{ l.release_at|date:"j M H:i" }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td><div class="row-actions">
+        {% if can.dev_documents and l.n %}<a class="btn btn-light btn-sm" href="{% url 'dev:pdf' l.pk %}">PDF</a>{% endif %}
+        {% if can.deliveries %}<a class="btn btn-light btn-sm" href="{% url 'dev:delivery_edit' l.pk %}">Régler</a>{% endif %}
+      </div></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if can.deliveries %}
+  <div class="bulk">
+    <label for="bulk-mode">Pour la sélection :</label>
+    <select id="bulk-mode" name="mode"><option value="immediate">Livrer maintenant</option><option value="delayed">Différer (délai par lot)</option><option value="hold">Retenir</option></select>
+    <button class="btn btn-primary btn-sm" type="submit">Appliquer</button>
+  </div>
+  {% endif %}
+</form>
+{% else %}
+<div class="panel empty"><svg class="ic"><use href="#i-send"/></svg><p>Aucun lot ici.</p></div>
+{% endif %}
+{% endblock %}

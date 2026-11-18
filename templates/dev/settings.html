@@ -1,0 +1,31 @@
+{% extends "dev/base.html" %}
+{% block title %}Réglages{% endblock %}
+{% block page_title %}Réglages de la plateforme{% endblock %}
+{% block content %}
+<form method="post" class="panel form-panel" novalidate>
+  {% csrf_token %}
+  <div class="form-section">
+    <h2><span class="num">1</span> Contacts affichés</h2>
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.admin_phone %}
+      {% include "partials/field.html" with field=form.admin_whatsapp %}
+      {% include "partials/field.html" with field=form.dev_whatsapp %}
+      {% include "partials/field.html" with field=form.dev_name %}
+    </div>
+  </div>
+  <div class="form-section">
+    <h2><span class="num">2</span> Bracelets</h2>
+    {% include "partials/field.html" with field=form.bracelet_line %}
+    <p class="help">Texte imprimé sous chaque QR code (utile sans internet). Laisser vide pour ne rien imprimer.</p>
+  </div>
+  <div class="form-section">
+    <h2><span class="num">3</span> Livraison par défaut des nouveaux lots</h2>
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.default_delivery_mode %}
+      {% include "partials/field.html" with field=form.default_delay_hours %}
+    </div>
+  </div>
+  <div class="form-actions"><button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-check"/></svg> Enregistrer</button></div>
+  <p class="muted small">Empreinte de la clé de signature : <code>{{ fingerprint }}</code></p>
+</form>
+{% endblock %}

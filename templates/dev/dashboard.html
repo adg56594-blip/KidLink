@@ -1,0 +1,30 @@
+{% extends "dev/base.html" %}
+{% block title %}Console{% endblock %}
+{% block page_title %}Vue d'ensemble{% endblock %}
+{% block content %}
+<section class="stats">
+  <article class="stat c-blue"><span class="stat-ic"><svg class="ic"><use href="#i-child"/></svg></span><p>Bracelets générés</p><b>{{ registrations }}</b><small>{{ events }} événement(s) à venir</small></article>
+  <article class="stat c-orange"><span class="stat-ic"><svg class="ic"><use href="#i-clock"/></svg></span><p>PDF en attente de livraison</p><b>{{ pending_count }}</b><small>décision des développeurs</small></article>
+  <article class="stat c-green"><span class="stat-ic"><svg class="ic"><use href="#i-scan"/></svg></span><p>Scans (7 j)</p><b>{{ scans_week }}</b><small>tous résultats</small></article>
+  <article class="stat c-red"><span class="stat-ic"><svg class="ic"><use href="#i-alert"/></svg></span><p>Bracelets falsifiés (7 j)</p><b>{{ forged_week }}</b><small>tentatives détectées</small></article>
+</section>
+<div class="split">
+  <section class="panel">
+    <div class="panel-head"><h2>À livrer</h2>{% if can.deliveries %}<a class="linklike" href="{% url 'dev:deliveries' %}">Gérer</a>{% endif %}</div>
+    {% if pending %}
+    <ul class="link-list">{% for l in pending %}<li><a href="{% if can.deliveries %}{% url 'dev:delivery_edit' l.pk %}{% else %}#{% endif %}"><span class="ll-main"><strong>{{ l.label }}</strong><small>{{ l.event.title }} · {{ l.get_delivery_mode_display }}</small></span><span class="ll-count"><b>{{ l.n }}</b>/{{ l.quota }}</span></a></li>{% endfor %}</ul>
+    {% else %}<div class="empty"><p>Rien en attente.</p></div>{% endif %}
+  </section>
+  <section class="panel">
+    <h2>État de sécurité</h2>
+    <ul class="checks">{% for label, ok in checks %}<li class="{% if ok %}ok{% else %}ko{% endif %}"><svg class="ic"><use href="#{% if ok %}i-check{% else %}i-alert{% endif %}"/></svg>{{ label }}</li>{% endfor %}</ul>
+    <p class="muted small">Empreinte de la clé de signature : <code>{{ fingerprint }}</code></p>
+  </section>
+</div>
+{% if recent %}
+<section class="panel table-panel">
+  <div class="panel-head"><h2>Activité récente</h2><a class="linklike" href="{% url 'dev:audit' %}">Journal complet</a></div>
+  <table class="table"><tbody>{% for a in recent %}<tr><td class="mono">{{ a.created_at|date:"d/m H:i" }}</td><td><span class="tag">{{ a.action }}</span></td><td>{{ a.actor.full_name|default:"Système" }}</td><td class="muted">{{ a.detail }}</td></tr>{% endfor %}</tbody></table>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "espace/base.html" %}{% load kl %}
+{% block title %}{{ link.label }}{% endblock %}
+{% block crumb %}Liens d'inscription · {{ link.event.title }}{% endblock %}
+{% block page_title %}{{ link.label }}{% endblock %}
+{% block content %}
+{% if url %}
+<section class="newlink">
+  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Le lien est prêt</h2><p>Il ne sera plus affiché après cette page. Envoyez-le maintenant.</p></div></div>
+  <div class="copy-row"><input id="the-link" readonly value="{{ url }}" aria-label="Lien d'inscription"><button class="btn btn-light" type="button" data-copy="#the-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
+  <div class="nl-actions">
+    <a class="btn btn-wa btn-lg" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ link.payer_phone|digits }}?text={{ share|urlencode }}"><svg class="ic"><use href="#i-wa"/></svg> Envoyer par WhatsApp{% if link.payer_phone %} à {{ link.payer_phone|phone }}{% endif %}</a>
+  </div>
+</section>
+{% endif %}
+
+<div class="split">
+  <section class="panel">
+    <div class="detail-top">
+      <div class="quota sm">
+        <svg viewBox="0 0 120 120" class="ring" aria-hidden="true"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" pathLength="100" stroke-dasharray="{{ link.used|pct:link.quota }} 100"/></svg>
+        <div class="quota-txt"><b>{{ link.used }}</b><span>sur {{ link.quota }}</span></div>
+      </div>
+      <dl class="kv">
+        <div><dt>État</dt><dd><span class="pill pill-{{ link.status_label|slugify }}">{{ link.status_label }}</span></dd></div>
+        <div><dt>Payé par</dt><dd>{{ link.payer_name }}{% if link.payer_phone %} · {{ link.payer_phone|phone }}{% endif %}</dd></div>
+        <div><dt>Encaissé</dt><dd>{{ link.amount_received|fcfa }}</dd></div>
+        <div><dt>Valable jusqu'au</dt><dd>{{ link.expires_at|date:"j F Y à H:i" }}</dd></div>
+        <div><dt>Créé par</dt><dd>{{ link.created_by.full_name|default:"—" }} · {{ link.created_at|date:"j M Y H:i" }}</dd></div>
+        <div><dt>Fin du lien</dt><dd class="mono">…{{ link.token_hint }}</dd></div>
+      </dl>
+    </div>
+    {% if can.links %}
+    <div class="form-actions start">
+      <form method="post" action="{% url 'espace:link_regenerate' link.pk %}" data-confirm="Créer un nouveau lien ? L'ancien ne fonctionnera plus.">{% csrf_token %}<button class="btn btn-light" type="submit"><svg class="ic"><use href="#i-link"/></svg> Nouveau lien (l'ancien est perdu)</button></form>
+      <form method="post" action="{% url 'espace:link_toggle' link.pk %}" data-confirm="{% if link.is_active %}Désactiver ce lien ?{% else %}Réactiver ce lien ?{% endif %}">{% csrf_token %}<button class="btn {% if link.is_active %}btn-danger-soft{% else %}btn-light{% endif %}" type="submit">{% if link.is_active %}Désactiver{% else %}Réactiver{% endif %}</button></form>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="panel">
+    <h2>Documents</h2>
+    {% if link.is_released %}
+      <p class="ok-line"><svg class="ic"><use href="#i-check"/></svg> Le PDF des bracelets est disponible.</p>
+      {% if can.documents %}<a class="btn btn-primary btn-block" href="{% url 'espace:document_download' link.pk %}"><svg class="ic"><use href="#i-doc"/></svg> Télécharger le PDF</a>{% endif %}
+    {% else %}
+      <p class="muted"><svg class="ic"><use href="#i-clock"/></svg> Le PDF des bracelets sera transmis par l'équipe technique.</p>
+    {% endif %}
+  </aside>
+</div>
+
+{% if regs is not None %}
+<section class="panel table-panel">
+  <div class="panel-head"><h2>Enfants inscrits ({{ regs|length }})</h2></div>
+  {% if regs %}
+  <table class="table">
+    <thead><tr><th>Enfant</th><th>Paroisse</th><th>Parent</th><th>Inscrit le</th><th>Bracelet</th></tr></thead>
+    <tbody>
+    {% for r in regs %}
+      <tr{% if r.revoked_at %} class="is-off"{% endif %}>
+        <td><strong>{{ r.full_name }}</strong></td>
+        <td>{{ r.paroisse }}</td>
+        <td>{{ r.parent_name }}<small>{{ r.parent_phone|phone }}</small></td>
+        <td>{{ r.created_at|date:"j M H:i" }}</td>
+        <td>
+          <form method="post" action="{% url 'espace:registration_revoke' r.pk %}" data-confirm="{% if r.revoked_at %}Réactiver ce bracelet ?{% else %}Désactiver ce bracelet (perdu ou volé) ?{% endif %}">{% csrf_token %}
+            <button class="btn btn-sm {% if r.revoked_at %}btn-light{% else %}btn-danger-soft{% endif %}" type="submit">{% if r.revoked_at %}Réactiver{% else %}Désactiver{% endif %}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="empty"><p>Personne n'a encore rempli ce lien.</p></div>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

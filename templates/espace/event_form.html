@@ -1,0 +1,37 @@
+{% extends "espace/base.html" %}
+{% block title %}Événement{% endblock %}
+{% block crumb %}Événements{% endblock %}
+{% block page_title %}{% if ev %}Modifier l'événement{% else %}Nouvel événement{% endif %}{% endblock %}
+{% block content %}
+<form method="post" class="panel form-panel" novalidate>
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="form-section">
+    <h2><span class="num">1</span> L'événement</h2>
+    {% include "partials/field.html" with field=form.title %}
+    {% include "partials/field.html" with field=form.location %}
+    {% include "partials/field.html" with field=form.description %}
+  </div>
+  <div class="form-section">
+    <h2><span class="num">2</span> Les dates</h2>
+    <div class="grid3">
+      {% include "partials/field.html" with field=form.starts_on %}
+      {% include "partials/field.html" with field=form.ends_on %}
+      {% include "partials/field.html" with field=form.registration_deadline %}
+    </div>
+  </div>
+  <div class="form-section">
+    <h2><span class="num">3</span> Prix et données</h2>
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.price_per_child %}
+      {% include "partials/field.html" with field=form.retention_days %}
+    </div>
+    <p class="help">Après la fin de l'événement + ce nombre de jours, les données des enfants doivent être vidées. Les bracelets afficheront alors « expiré ».</p>
+    {% include "partials/field.html" with field=form.is_published %}
+  </div>
+  <div class="form-actions">
+    <a class="btn btn-light" href="{% url 'espace:events' %}">Annuler</a>
+    <button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-check"/></svg> Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

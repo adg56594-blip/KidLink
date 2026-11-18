@@ -1,0 +1,43 @@
+{% extends "espace/base.html" %}
+{% block title %}Mon équipe{% endblock %}
+{% block page_title %}Mon équipe{% endblock %}
+{% block content %}
+{% if invite_url %}
+<section class="newlink">
+  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Invitation créée</h2><p>Envoyez ce lien à la personne. Il est valable 72 h, une seule fois, et ne sera plus affiché.</p></div></div>
+  <div class="copy-row"><input id="inv-link" readonly value="{{ invite_url }}" aria-label="Lien d'invitation"><button class="btn btn-light" type="button" data-copy="#inv-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
+</section>
+{% endif %}
+<div class="split">
+  <section class="panel">
+    <h2>Sous-administrateurs</h2>
+    {% if members %}
+    <ul class="people">
+      {% for m in members %}
+      <li class="{% if not m.is_active %}is-off{% endif %}">
+        <span class="avatar">{{ m.full_name|slice:":1"|upper }}</span>
+        <div><strong>{{ m.full_name }}</strong><small>{{ m.email }}</small>
+          <div class="tags">{% for r in m.role_labels %}<span class="tag">{{ r }}</span>{% empty %}<span class="tag">Aucun droit</span>{% endfor %}</div></div>
+        <a class="btn btn-light btn-sm" href="{% url 'espace:team_member' m.pk %}">Gérer</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<div class="empty"><p>Aucun sous-administrateur.</p></div>{% endif %}
+    {% if invites %}
+    <h3 class="sub">Invitations en attente</h3>
+    <ul class="people">{% for i in invites %}<li><span class="avatar ghost">?</span><div><strong>{{ i.full_name }}</strong><small>{{ i.email }} · expire le {{ i.expires_at|date:"j M H:i" }}</small></div>
+      <form method="post" action="{% url 'espace:invite_revoke' i.pk %}">{% csrf_token %}<button class="btn btn-sm btn-danger-soft" type="submit">Annuler</button></form></li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <h2>Inviter un sous-administrateur</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.full_name %}
+      {% include "partials/field.html" with field=form.email %}
+      {% include "partials/roles.html" with field=form.roles %}
+      <button class="btn btn-primary btn-block" type="submit"><svg class="ic"><use href="#i-send"/></svg> Créer l'invitation</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

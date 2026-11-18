@@ -1,0 +1,23 @@
+{% extends "espace/base.html" %}
+{% block title %}Vider les données{% endblock %}
+{% block crumb %}Événements · {{ ev.title }}{% endblock %}
+{% block page_title %}Vider les données{% endblock %}
+{% block content %}
+<div class="panel narrow danger-panel">
+  <svg class="ic big"><use href="#i-alert"/></svg>
+  <h2>Effacement définitif</h2>
+  <p>Les <strong>{{ count }}</strong> inscription(s), tous les liens et l'historique des scans de <strong>{{ ev.title }}</strong> seront effacés pour toujours. Les bracelets afficheront « expiré ». Cette action est irréversible.</p>
+  {% if allowed %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/field.html" with field=form.confirm %}
+    <div class="form-actions">
+      <a class="btn btn-light" href="{% url 'espace:events' %}">Annuler</a>
+      <button class="btn btn-danger" type="submit">Effacer définitivement</button>
+    </div>
+  </form>
+  {% else %}
+  <p class="info-box"><svg class="ic"><use href="#i-clock"/></svg> Les données doivent être conservées jusqu'au <strong>{{ ev.retention_until|date:"j F Y" }}</strong>. Le bouton sera disponible après cette date.</p>
+  {% endif %}
+</div>
+{% endblock %}

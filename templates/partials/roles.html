@@ -1,0 +1,9 @@
+<fieldset class="roles-pick{% if field.errors %} has-error{% endif %}">
+  <legend>{{ field.label }}</legend>
+  <div class="role-grid">
+  {% for opt in field %}
+    <label class="role-opt">{{ opt.tag }}<span class="role-box"><svg class="ic"><use href="#i-check"/></svg></span><span>{{ opt.choice_label }}</span></label>
+  {% endfor %}
+  </div>
+  {% for e in field.errors %}<p class="error">{{ e }}</p>{% endfor %}
+</fieldset>

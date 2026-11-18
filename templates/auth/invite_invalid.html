@@ -1,0 +1,9 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Invitation non valable{% endblock %}
+{% block auth %}
+<div class="auth-card">
+  <h1>Invitation non valable</h1>
+  <p class="muted">Ce lien a déjà été utilisé, a expiré ou a été annulé. Demandez une nouvelle invitation.</p>
+  <a class="btn btn-primary btn-lg btn-block" href="/"><svg class="ic"><use href="#i-home"/></svg> Accueil</a>
+</div>
+{% endblock %}

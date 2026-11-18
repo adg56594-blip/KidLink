@@ -1,0 +1,17 @@
+{% extends "dev/base.html" %}
+{% block title %}{{ member.full_name }}{% endblock %}
+{% block crumb %}Équipe technique{% endblock %}
+{% block page_title %}{{ member.full_name }}{% endblock %}
+{% block content %}
+<div class="panel narrow">
+  <div class="profile"><span class="avatar">{{ member.full_name|slice:":1"|upper }}</span><div><strong>{{ member.full_name }}</strong><span>{{ member.email }}</span></div></div>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/roles.html" with field=form.roles %}
+    <div class="form-actions start">
+      <button class="btn btn-primary" type="submit" name="action" value="roles">Enregistrer les droits</button>
+      <button class="btn {% if member.is_active %}btn-danger-soft{% else %}btn-light{% endif %}" type="submit" name="action" value="toggle">{% if member.is_active %}Suspendre{% else %}Réactiver{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

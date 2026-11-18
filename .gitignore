@@ -1,0 +1,9 @@
+.keys/
+db.sqlite3
+staticfiles/
+__pycache__/
+*.pyc
+.env
+.venv/
+.pytest_cache/
+/test-artifacts/

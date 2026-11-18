@@ -1,0 +1,38 @@
+{% extends "base.html" %}{% load static %}
+{% block body_class %}page-app theme-dev{% endblock %}
+{% block body %}
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-rainbow" aria-hidden="true"></div>
+    <a class="side-brand" href="{% url 'dev:dashboard' %}">
+      <img src="{% static 'img/ecc-logo.webp' %}" alt="" width="44" height="46">
+      <span><strong>Kid<span>Link</span></strong><small>Console technique</small></span>
+    </a>
+    <nav class="side-nav" aria-label="Menu">
+      <a href="{% url 'dev:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg>Vue d'ensemble</a>
+      {% if can.deliveries or can.dev_documents %}<a href="{% url 'dev:deliveries' %}" {% if nav == 'deliveries' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-send"/></svg>Livraison des PDF</a>{% endif %}
+      {% if can.accounts %}<a href="{% url 'dev:accounts' %}" {% if nav == 'accounts' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-users"/></svg>Administrateurs</a>{% endif %}
+      {% if request.user.is_lead_dev %}<a href="{% url 'dev:team' %}" {% if nav == 'team' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-code"/></svg>Équipe technique</a>{% endif %}
+      {% if can.audit %}<a href="{% url 'dev:audit' %}" {% if nav == 'audit' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-log"/></svg>Journal de sécurité</a>{% endif %}
+      {% if can.settings %}<a href="{% url 'dev:settings' %}" {% if nav == 'settings' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-gear"/></svg>Réglages</a>{% endif %}
+      <a href="{% url 'dev:account' %}" {% if nav == 'account' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-lock"/></svg>Mon compte</a>
+      {% if can.events or can.links or can.registrations or can.documents %}<a href="{% url 'espace:dashboard' %}"><svg class="ic"><use href="#i-cal"/></svg>Espace administration</a>{% endif %}
+    </nav>
+    <div class="side-user">
+      <span class="avatar">{{ request.user.full_name|slice:":1"|upper }}</span>
+      <div><strong>{{ request.user.full_name }}</strong><small>{{ request.user.title }}</small></div>
+      <form method="post" action="{% url 'auth:logout' %}">{% csrf_token %}<button class="icon-btn" type="submit" title="Se déconnecter" aria-label="Se déconnecter"><svg class="ic"><use href="#i-out"/></svg></button></form>
+    </div>
+  </aside>
+  <div class="app-main">
+    <header class="app-top">
+      <button class="icon-btn menu-btn" type="button" data-toggle-menu aria-controls="sidebar" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <div class="app-title"><p class="crumb">{% block crumb %}Console développeur{% endblock %}</p><h1>{% block page_title %}{% endblock %}</h1></div>
+      <div class="app-actions">{% block actions %}{% endblock %}</div>
+    </header>
+    {% include "partials/messages.html" %}
+    <div class="app-content" id="main">{% block content %}{% endblock %}</div>
+  </div>
+</div>
+<div class="scrim" data-toggle-menu></div>
+{% endblock %}

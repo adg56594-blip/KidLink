@@ -1,0 +1,39 @@
+{% extends "espace/base.html" %}{% load kl %}
+{% block title %}Événements{% endblock %}
+{% block page_title %}Événements{% endblock %}
+{% block actions %}{% if can.events %}<a class="btn btn-primary" href="{% url 'espace:event_new' %}"><svg class="ic"><use href="#i-plus"/></svg><span>Nouvel événement</span></a>{% endif %}{% endblock %}
+{% block content %}
+{% if events %}
+<div class="event-grid">
+{% for ev in events %}
+  <article class="event-card{% if ev.is_purged %} is-purged{% endif %}">
+    <div class="ec-top">
+      <span class="ec-date"><b>{{ ev.starts_on|date:"d" }}</b>{{ ev.starts_on|date:"M Y" }}</span>
+      {% if ev.is_purged %}<span class="pill pill-desactive">Données effacées</span>
+      {% elif ev.ends_on < today %}<span class="pill pill-expire">Terminé</span>
+      {% elif ev.is_published %}<span class="pill pill-actif">Affiché sur l'accueil</span>
+      {% else %}<span class="pill">Brouillon</span>{% endif %}
+    </div>
+    <h2>{{ ev.title }}</h2>
+    <p class="muted"><svg class="ic"><use href="#i-pin"/></svg>{{ ev.location }}</p>
+    <dl class="ec-meta">
+      <div><dt>Inscrits</dt><dd>{% if ev.is_purged %}{{ ev.purged_registrations }}{% else %}{{ ev.n }}{% endif %}</dd></div>
+      <div><dt>Liens</dt><dd>{{ ev.nl }}</dd></div>
+      <div><dt>Prix</dt><dd>{{ ev.price_per_child|fcfa }}</dd></div>
+    </dl>
+    {% if not ev.is_purged %}
+    <p class="ec-ret{% if ev.retention_over %} danger{% endif %}"><svg class="ic"><use href="#i-clock"/></svg>Données conservées jusqu'au {{ ev.retention_until|date:"j F Y" }}{% if ev.retention_over %} — à vider{% endif %}</p>
+    <div class="ec-actions">
+      {% if can.events %}<a class="btn btn-light btn-sm" href="{% url 'espace:event_edit' ev.pk %}">Modifier</a>{% endif %}
+      {% if can.purge %}<a class="btn btn-danger-soft btn-sm" href="{% url 'espace:event_purge' ev.pk %}">Vider les données</a>{% endif %}
+    </div>
+    {% else %}
+    <p class="ec-ret">Effacé le {{ ev.purged_at|date:"j F Y" }}</p>
+    {% endif %}
+  </article>
+{% endfor %}
+</div>
+{% else %}
+<div class="panel empty"><svg class="ic"><use href="#i-cal"/></svg><p>Aucun événement. Créez le prochain pèlerinage : il apparaîtra en grand sur la page d'accueil.</p>{% if can.events %}<a class="btn btn-primary" href="{% url 'espace:event_new' %}"><svg class="ic"><use href="#i-plus"/></svg> Créer un événement</a>{% endif %}</div>
+{% endif %}
+{% endblock %}

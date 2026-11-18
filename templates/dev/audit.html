@@ -1,0 +1,13 @@
+{% extends "dev/base.html" %}
+{% block title %}Journal{% endblock %}
+{% block page_title %}Journal de sécurité{% endblock %}
+{% block content %}
+<form class="search" method="get" role="search"><input type="search" name="q" value="{{ q }}" placeholder="Filtrer (action, personne, détail)…" aria-label="Filtrer"></form>
+<div class="panel table-panel">
+  <table class="table">
+    <thead><tr><th>Date</th><th>Action</th><th>Par</th><th>Détail</th><th>IP (anonymisée)</th></tr></thead>
+    <tbody>{% for a in page %}<tr><td class="mono">{{ a.created_at|date:"d/m/Y H:i:s" }}</td><td><span class="tag">{{ a.action }}</span></td><td>{{ a.actor_label|default:"Système" }}</td><td>{{ a.detail }}</td><td class="mono muted">{{ a.ip_hash }}</td></tr>{% empty %}<tr><td colspan="5" class="muted">Aucune entrée.</td></tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% if page.has_other_pages %}<nav class="pager">{% if page.has_previous %}<a class="btn btn-light btn-sm" href="?q={{ q|urlencode }}&page={{ page.previous_page_number }}">Précédent</a>{% endif %}<span>Page {{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn btn-light btn-sm" href="?q={{ q|urlencode }}&page={{ page.next_page_number }}">Suivant</a>{% endif %}</nav>{% endif %}
+{% endblock %}

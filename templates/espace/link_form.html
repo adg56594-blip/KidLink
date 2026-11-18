@@ -1,0 +1,56 @@
+{% extends "espace/base.html" %}
+{% block title %}Nouveau lien{% endblock %}
+{% block crumb %}Liens d'inscription{% endblock %}
+{% block page_title %}Nouveau lien après paiement{% endblock %}
+{% block content %}
+{{ prices|json_script:"prices" }}
+<div class="split">
+<form method="post" class="panel form-panel" novalidate id="link-form">
+  {% csrf_token %}
+  <div class="form-section">
+    <h2><span class="num">1</span> Pour qui ?</h2>
+    {% include "partials/field.html" with field=form.event %}
+    {% include "partials/field.html" with field=form.label %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.payer_name %}
+      {% include "partials/field.html" with field=form.payer_phone %}
+    </div>
+  </div>
+  <div class="form-section">
+    <h2><span class="num">2</span> Combien d'enfants ont été payés ?</h2>
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.quota %}
+      {% include "partials/field.html" with field=form.quota_confirm %}
+    </div>
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.amount_received %}
+      {% include "partials/field.html" with field=form.valid_days %}
+    </div>
+    {% include "partials/field.html" with field=form.discount_ack %}
+  </div>
+  <div class="form-section">
+    <h2><span class="num">3</span> Vérification</h2>
+    <div class="recap" id="recap" aria-live="polite">
+      <div><span>Enfants</span><b data-r="quota">—</b></div>
+      <div><span>Prix normal</span><b data-r="expected">—</b></div>
+      <div><span>Encaissé</span><b data-r="amount">—</b></div>
+    </div>
+    <p class="warn-box" id="recap-warn" hidden></p>
+    {% include "partials/field.html" with field=form.cash_ack %}
+  </div>
+  <div class="form-actions">
+    <a class="btn btn-light" href="{% url 'espace:links' %}">Annuler</a>
+    <button class="btn btn-primary" type="submit" data-confirm-quota><svg class="ic"><use href="#i-link"/></svg> Créer le lien</button>
+  </div>
+</form>
+<aside class="panel tips">
+  <h2>Avant de créer le lien</h2>
+  <ol>
+    <li>Recomptez l'argent reçu.</li>
+    <li>Le nombre d'enfants doit correspondre <strong>exactement</strong> au paiement : le lien s'arrêtera tout seul à ce nombre.</li>
+    <li>Une confirmation vous sera demandée si le nombre est élevé.</li>
+    <li>Le lien n'est affiché qu'<strong>une seule fois</strong> : envoyez-le tout de suite par WhatsApp.</li>
+  </ol>
+</aside>
+</div>
+{% endblock %}

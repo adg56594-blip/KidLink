@@ -1,0 +1,22 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Double authentification{% endblock %}
+{% block auth %}
+<div class="auth-card">
+  {% if enrolling %}
+    <h1>Protégez votre compte</h1>
+    <p class="muted">Installez <strong>Google Authenticator</strong>, <strong>Microsoft Authenticator</strong> ou <strong>Aegis</strong> sur votre téléphone, puis scannez ce code.</p>
+    <div class="otp-qr">{{ qr_svg|safe }}</div>
+    <p class="otp-secret">Ou tapez cette clé : <code>{{ secret_display }}</code></p>
+    <p class="muted">Ensuite, entrez le code à 6 chiffres affiché par l'application.</p>
+  {% else %}
+    <h1>Code de sécurité</h1>
+    <p class="muted">Ouvrez votre application d'authentification et entrez le code à 6 chiffres.</p>
+  {% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/field.html" with field=form.code %}
+    <button class="btn btn-primary btn-lg btn-block" type="submit"><svg class="ic"><use href="#i-shield"/></svg> Valider</button>
+  </form>
+  <form method="post" action="{% url 'auth:logout' %}" class="center">{% csrf_token %}<button class="linklike" type="submit">Annuler et se déconnecter</button></form>
+</div>
+{% endblock %}

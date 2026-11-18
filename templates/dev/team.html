@@ -1,0 +1,34 @@
+{% extends "dev/base.html" %}
+{% block title %}Équipe technique{% endblock %}
+{% block page_title %}Équipe technique{% endblock %}
+{% block content %}
+{% if invite_url %}
+<section class="newlink">
+  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Invitation créée</h2><p>Valable 72 h, une seule fois.</p></div></div>
+  <div class="copy-row"><input id="inv-link" readonly value="{{ invite_url }}" aria-label="Lien"><button class="btn btn-light" type="button" data-copy="#inv-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
+</section>
+{% endif %}
+<div class="split">
+  <section class="panel">
+    <h2>Sous-développeurs</h2>
+    {% if members %}
+    <ul class="people">{% for m in members %}<li class="{% if not m.is_active %}is-off{% endif %}"><span class="avatar">{{ m.full_name|slice:":1"|upper }}</span>
+      <div><strong>{{ m.full_name }}</strong><small>{{ m.email }}</small><div class="tags">{% for r in m.role_labels %}<span class="tag">{{ r }}</span>{% empty %}<span class="tag">Aucun droit</span>{% endfor %}</div></div>
+      <a class="btn btn-light btn-sm" href="{% url 'dev:team_member' m.pk %}">Gérer</a></li>{% endfor %}</ul>
+    {% else %}<div class="empty"><p>Vous êtes seul pour l'instant.</p></div>{% endif %}
+    {% if invites %}<h3 class="sub">Invitations en attente</h3>
+    <ul class="people">{% for i in invites %}<li><span class="avatar ghost">?</span><div><strong>{{ i.full_name }}</strong><small>{{ i.email }}</small></div>
+      <form method="post" action="{% url 'dev:invite_revoke' i.pk %}">{% csrf_token %}<button class="btn btn-sm btn-danger-soft" type="submit">Annuler</button></form></li>{% endfor %}</ul>{% endif %}
+  </section>
+  <section class="panel">
+    <h2>Inviter un sous-développeur</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.full_name %}
+      {% include "partials/field.html" with field=form.email %}
+      {% include "partials/roles.html" with field=form.roles %}
+      <button class="btn btn-primary btn-block" type="submit"><svg class="ic"><use href="#i-send"/></svg> Créer l'invitation</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

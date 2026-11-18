@@ -1,0 +1,29 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Inscription de l'administrateur{% endblock %}
+{% block side_quote %}Vous êtes la personne de confiance de KidLink.<span>Administrateur principal</span>{% endblock %}
+{% block auth %}
+<div class="auth-card wide">
+  <p class="kicker"><span class="dot"></span> Invitation unique</p>
+  <h1>Créez le compte de l'administrateur principal</h1>
+  <p class="muted">Ce compte encaisse les paiements, crée les liens d'inscription et nomme les sous-administrateurs. Ce lien ne fonctionne qu'une seule fois.</p>
+  <ul class="perks">
+    <li><svg class="ic"><use href="#i-cal"/></svg> Créer les événements (pèlerinages)</li>
+    <li><svg class="ic"><use href="#i-link"/></svg> Générer les liens après paiement</li>
+    <li><svg class="ic"><use href="#i-users"/></svg> Nommer des sous-administrateurs</li>
+    <li><svg class="ic"><use href="#i-doc"/></svg> Recevoir les PDF des bracelets</li>
+  </ul>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.full_name %}
+      {% include "partials/field.html" with field=form.phone %}
+    </div>
+    {% include "partials/field.html" with field=form.email %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.password1 %}
+      {% include "partials/field.html" with field=form.password2 %}
+    </div>
+    <button class="btn btn-primary btn-lg btn-block" type="submit"><svg class="ic"><use href="#i-shield"/></svg> Créer mon compte</button>
+  </form>
+</div>
+{% endblock %}

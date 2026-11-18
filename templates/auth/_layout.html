@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% load static %}
+{% block body_class %}page-auth{% endblock %}
+{% block body %}
+<main id="main" class="auth">
+  <aside class="auth-side" aria-hidden="true">
+    <svg class="arcs arcs-side" viewBox="0 0 400 230">
+      <path pathLength="1" d="M20 220a180 180 0 0 1 360 0" class="a1"/>
+      <path pathLength="1" d="M42 220a158 158 0 0 1 316 0" class="a2"/>
+      <path pathLength="1" d="M64 220a136 136 0 0 1 272 0" class="a3"/>
+      <path pathLength="1" d="M86 220a114 114 0 0 1 228 0" class="a4"/>
+      <path pathLength="1" d="M108 220a92 92 0 0 1 184 0" class="a5"/>
+      <path pathLength="1" d="M130 220a70 70 0 0 1 140 0" class="a6"/>
+    </svg>
+    <img class="auth-logo" src="{% static 'img/ecc-logo.webp' %}" alt="" width="160" height="166">
+    <p class="auth-quote">{% block side_quote %}« Laissez venir à moi les petits enfants. »<span>Marc 10:14</span>{% endblock %}</p>
+  </aside>
+  <section class="auth-main">
+    <a class="brand" href="/"><img src="{% static 'img/ecc-logo.webp' %}" alt="" width="40" height="41"><span class="brand-txt"><strong>Kid<span>Link</span></strong><small>Espace sécurisé</small></span></a>
+    {% include "partials/messages.html" %}
+    {% block auth %}{% endblock %}
+    <p class="auth-foot"><svg class="ic"><use href="#i-lock"/></svg> Connexion chiffrée · double authentification obligatoire</p>
+  </section>
+</main>
+{% endblock %}

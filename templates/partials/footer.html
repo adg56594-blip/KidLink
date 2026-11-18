@@ -1,0 +1,15 @@
+{% load static %}<footer class="site-footer">
+  <div class="rainbow-line" aria-hidden="true"></div>
+  <div class="foot-inner">
+    <div class="foot-brand">
+      <img src="{% static 'img/ecc-logo.webp' %}" alt="" width="56" height="56">
+      <div><strong>KidLink</strong><span>Église du Christianisme Céleste</span></div>
+    </div>
+    <div class="foot-contacts">
+      <a class="foot-link" href="tel:+{{ admin_phone_tel }}"><svg class="ic"><use href="#i-phone"/></svg> Administration : {{ admin_phone_pretty }}</a>
+      <a class="foot-link" href="https://wa.me/{{ admin_wa }}" rel="noopener noreferrer" target="_blank"><svg class="ic"><use href="#i-wa"/></svg> WhatsApp administration</a>
+    </div>
+    <p class="foot-dev">Conçu et développé par {{ site.dev_name }} ·
+      <a href="https://wa.me/{{ dev_wa }}" rel="noopener noreferrer" target="_blank"><svg class="ic"><use href="#i-wa"/></svg> {{ dev_wa_pretty }}</a></p>
+  </div>
+</footer>

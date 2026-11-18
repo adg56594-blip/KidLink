@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}Scanner un bracelet{% endblock %}
+{% block body_class %}page-scanner{% endblock %}
+{% block head %}<script src="{% static 'vendor/jsQR.js' %}" defer></script><script src="{% static 'js/scanner.js' %}" defer></script>{% endblock %}
+{% block body %}
+{% include "public/_topbar.html" %}
+<main id="main" class="scanner-wrap" data-origin="{{ public_url }}">
+  <h1>Visez le code du bracelet</h1>
+  <p class="lead">Le téléphone vérifie tout seul si le bracelet est authentique. Ça marche aussi sans internet.</p>
+  <div class="viewfinder">
+    <video id="cam" playsinline muted></video>
+    <canvas id="frame" hidden></canvas>
+    <div class="vf-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="vf-laser" aria-hidden="true"></div>
+    <button id="start" class="btn btn-primary btn-lg vf-start" type="button"><svg class="ic"><use href="#i-scan"/></svg> Ouvrir la caméra</button>
+  </div>
+  <div id="scan-msg" class="scan-msg" role="status" hidden></div>
+  <details class="manual">
+    <summary>La caméra ne marche pas ?</summary>
+    <p>Utilisez l'appareil photo normal de votre téléphone (ou Google Lens) et visez le code. Une page KidLink officielle s'ouvre : vérifiez que l'adresse commence bien par <strong class="mono">{{ public_url }}</strong>.</p>
+  </details>
+</main>
+{% include "partials/footer.html" %}
+{% endblock %}

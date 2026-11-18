@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}Hors ligne{% endblock %}
+{% block body_class %}page-link{% endblock %}
+{% block body %}
+<main id="main" class="center-wrap">
+  <div class="center-card card-glass">
+    <img src="{% static 'img/ecc-logo.webp' %}" alt="" width="88" height="91">
+    <h1>Pas de connexion</h1>
+    <p>Cette page demande internet. La lecture des bracelets, elle, fonctionne sans connexion.</p>
+    <a class="btn btn-primary btn-lg" href="/scanner/"><svg class="ic"><use href="#i-scan"/></svg> Scanner un bracelet</a>
+    <a class="btn btn-light btn-lg" href="tel:+{{ admin_phone_tel }}"><svg class="ic"><use href="#i-phone"/></svg> Appeler l'administration</a>
+  </div>
+</main>
+{% endblock %}

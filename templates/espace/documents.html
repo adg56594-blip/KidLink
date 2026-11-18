@@ -1,0 +1,22 @@
+{% extends "espace/base.html" %}
+{% block title %}Documents PDF{% endblock %}
+{% block page_title %}Documents PDF des bracelets{% endblock %}
+{% block content %}
+<p class="intro">Chaque PDF contient 20 bracelets par page A4, prêts pour l'imprimeur. Imprimez à l'échelle 100 %.</p>
+{% if ready %}
+<div class="doc-grid">
+  {% for l in ready %}
+  <article class="doc-card">
+    <span class="doc-ic"><svg class="ic"><use href="#i-doc"/></svg></span>
+    <h2>{{ l.label }}</h2>
+    <p class="muted">{{ l.event.title }}</p>
+    <p><b>{{ l.n }}</b> bracelet(s)</p>
+    <a class="btn btn-primary btn-block" href="{% url 'espace:document_download' l.pk %}"><svg class="ic"><use href="#i-doc"/></svg> Télécharger</a>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="panel empty"><svg class="ic"><use href="#i-doc"/></svg><p>Aucun document disponible pour le moment.</p></div>
+{% endif %}
+{% if waiting %}<p class="info-box"><svg class="ic"><use href="#i-clock"/></svg> {{ waiting }} lot(s) en cours de préparation par l'équipe technique.</p>{% endif %}
+{% endblock %}

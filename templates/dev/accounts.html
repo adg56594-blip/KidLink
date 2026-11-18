@@ -1,0 +1,43 @@
+{% extends "dev/base.html" %}
+{% block title %}Administrateurs{% endblock %}
+{% block page_title %}Comptes administrateurs{% endblock %}
+{% block content %}
+{% if invite_url %}
+<section class="newlink">
+  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Page d'inscription de l'administrateur prête</h2><p>Valable 48 h, une seule fois. Elle ne sera plus affichée.</p></div></div>
+  <div class="copy-row"><input id="pa-link" readonly value="{{ invite_url }}" aria-label="Lien"><button class="btn btn-light" type="button" data-copy="#pa-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
+  <a class="btn btn-wa" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ admin_wa }}?text={% filter urlencode %}Bonjour, voici votre page d'inscription d'administrateur KidLink (valable 48 h, une seule fois) : {{ invite_url }}{% endfilter %}"><svg class="ic"><use href="#i-wa"/></svg> Envoyer à l'administrateur</a>
+</section>
+{% endif %}
+{% if not has_principal %}
+<section class="panel">
+  <h2>Créer la page d'inscription de l'administrateur principal</h2>
+  <p class="muted">Seule la personne qui reçoit ce lien pourra devenir administrateur principal. Ensuite, elle seule créera les sous-administrateurs.</p>
+  <form method="post" action="{% url 'dev:principal_invite' %}" class="grid3 align-end">
+    {% csrf_token %}
+    <div class="field"><label for="pa-name">Nom (facultatif)</label><input id="pa-name" name="full_name" maxlength="120"></div>
+    <div class="field"><label for="pa-mail">E-mail imposé (facultatif)</label><input id="pa-mail" name="email" type="email"></div>
+    <div class="field"><button class="btn btn-primary btn-block" type="submit"><svg class="ic"><use href="#i-link"/></svg> Générer</button></div>
+  </form>
+  {% for i in invites %}<p class="muted small">Invitation active jusqu'au {{ i.expires_at|date:"j M H:i" }}</p>{% endfor %}
+</section>
+{% endif %}
+<section class="panel">
+  <h2>Administrateurs</h2>
+  {% if admins %}
+  <ul class="people">
+  {% for a in admins %}
+    <li class="{% if not a.is_active %}is-off{% endif %}">
+      <span class="avatar">{{ a.full_name|slice:":1"|upper }}</span>
+      <div><strong>{{ a.full_name }}</strong><small>{{ a.email }} · {{ a.title }} · 2FA {% if a.totp_confirmed %}active{% else %}non configurée{% endif %}</small>
+        <div class="tags">{% for r in a.role_labels %}<span class="tag">{{ r }}</span>{% endfor %}</div></div>
+      <div class="row-actions">
+        <form method="post" action="{% url 'dev:account_action' a.pk %}" data-confirm="Réinitialiser la double authentification de {{ a.full_name }} ?">{% csrf_token %}<button class="btn btn-light btn-sm" name="action" value="reset_2fa">Réinit. 2FA</button></form>
+        <form method="post" action="{% url 'dev:account_action' a.pk %}" data-confirm="{% if a.is_active %}Suspendre{% else %}Réactiver{% endif %} {{ a.full_name }} ?">{% csrf_token %}<button class="btn btn-sm {% if a.is_active %}btn-danger-soft{% else %}btn-light{% endif %}" name="action" value="toggle">{% if a.is_active %}Suspendre{% else %}Réactiver{% endif %}</button></form>
+      </div>
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}<div class="empty"><p>Aucun administrateur.</p></div>{% endif %}
+</section>
+{% endblock %}

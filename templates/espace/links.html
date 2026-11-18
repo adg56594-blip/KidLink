@@ -1,0 +1,30 @@
+{% extends "espace/base.html" %}{% load kl %}
+{% block title %}Liens d'inscription{% endblock %}
+{% block page_title %}Liens d'inscription{% endblock %}
+{% block actions %}{% if can.links %}<a class="btn btn-primary" href="{% url 'espace:link_new' %}"><svg class="ic"><use href="#i-plus"/></svg><span>Nouveau lien</span></a>{% endif %}{% endblock %}
+{% block content %}
+<form class="search" method="get" role="search">
+  <input type="search" name="q" value="{{ q }}" placeholder="Rechercher une famille, une paroisse, un événement…" aria-label="Rechercher">
+</form>
+{% if links %}
+<div class="panel table-panel">
+  <table class="table">
+    <thead><tr><th>Famille / paroisse</th><th>Événement</th><th>Inscrits</th><th>Encaissé</th><th>État</th><th></th></tr></thead>
+    <tbody>
+    {% for l in links %}
+      <tr>
+        <td><strong>{{ l.label }}</strong><small>créé le {{ l.created_at|date:"j M Y" }}</small></td>
+        <td>{{ l.event.title }}</td>
+        <td><div class="mini-bar"><progress max="{{ l.quota }}" value="{{ l.n }}"></progress><span><b>{{ l.n }}</b>/{{ l.quota }}</span></div></td>
+        <td>{{ l.amount_received|fcfa }}</td>
+        <td><span class="pill pill-{{ l.status_label|slugify }}">{{ l.status_label }}</span></td>
+        <td><a class="btn btn-light btn-sm" href="{% url 'espace:link_detail' l.pk %}">Ouvrir</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="panel empty"><svg class="ic"><use href="#i-link"/></svg><p>{% if q %}Aucun résultat.{% else %}Aucun lien. Encaissez le paiement, puis créez un lien pour le nombre exact d'enfants payés.{% endif %}</p></div>
+{% endif %}
+{% endblock %}

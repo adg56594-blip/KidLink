@@ -1,0 +1,56 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}Bracelet KidLink{% endblock %}
+{% block body_class %}page-scan{% endblock %}
+{% block head %}<script src="{% static 'js/scan.js' %}" defer></script>{% endblock %}
+{% block body %}
+<main id="main" class="scan-wrap" data-pk="{{ public_key }}">
+  <header class="scan-head">
+    <img src="{% static 'img/ecc-logo.webp' %}" alt="Église du Christianisme Céleste" width="64" height="66">
+    <div><strong>Kid<span>Link</span></strong><small>Église du Christianisme Céleste</small></div>
+  </header>
+
+  <section id="seal" class="seal seal-checking" aria-live="polite">
+    <div class="seal-ring" aria-hidden="true"><svg class="ic"><use href="#i-shield"/></svg></div>
+    <div class="seal-txt">
+      <strong id="seal-title">Vérification du bracelet…</strong>
+      <span id="seal-sub">Un instant</span>
+    </div>
+    <time id="seal-clock" class="seal-clock" aria-label="Heure actuelle"></time>
+  </section>
+
+  <section id="child" class="child-card" hidden>
+    <p class="child-kicker"><svg class="ic"><use href="#i-child"/></svg> Cet enfant s'appelle</p>
+    <h1 id="c-name"></h1>
+    <dl class="child-info">
+      <div><dt>Paroisse</dt><dd id="c-paroisse"></dd></div>
+      <div><dt>Parent</dt><dd id="c-parent"></dd></div>
+      <div><dt>Code du bracelet</dt><dd id="c-code" class="mono"></dd></div>
+    </dl>
+
+    <div class="call-stack">
+      <a id="b-call" class="btn btn-call btn-xl" href="#"><svg class="ic"><use href="#i-phone"/></svg><span><b>Appeler la famille</b><small id="b-call-num"></small></span></a>
+      <a id="b-wa" class="btn btn-wa btn-lg" href="#" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-wa"/></svg><span>WhatsApp + ma position</span></a>
+      <a id="b-call2" class="btn btn-light btn-lg" href="#" hidden><svg class="ic"><use href="#i-phone"/></svg><span>Autre numéro <small id="b-call2-num"></small></span></a>
+      <a id="b-charge" class="btn btn-light btn-lg" href="#" hidden><svg class="ic"><use href="#i-phone"/></svg><span>Appeler le chargé <small id="b-charge-num"></small></span></a>
+      <a class="btn btn-ghost btn-lg" href="tel:+{{ admin_phone_tel }}"><svg class="ic"><use href="#i-shield"/></svg><span>Administration KidLink <small>{{ admin_phone_pretty }}</small></span></a>
+    </div>
+
+    <ol class="finder-tips">
+      <li><span>1</span>Restez avec l'enfant, dans un endroit visible.</li>
+      <li><span>2</span>Appelez la famille avec le gros bouton vert.</li>
+      <li><span>3</span>Si personne ne répond, appelez l'administration.</li>
+    </ol>
+    <button class="speak" type="button" id="speak-child"><svg class="ic"><use href="#i-sound"/></svg> Écouter</button>
+  </section>
+
+  <section id="bad" class="bad-card" hidden>
+    <svg class="ic"><use href="#i-alert"/></svg>
+    <h1 id="bad-title">Bracelet non reconnu</h1>
+    <p id="bad-text">Ce code n'a pas été produit par KidLink. N'utilisez pas les numéros qu'il pourrait afficher.</p>
+    <a class="btn btn-call btn-lg" href="tel:+{{ admin_phone_tel }}"><svg class="ic"><use href="#i-phone"/></svg> Appeler l'administration</a>
+  </section>
+
+  <noscript><p class="bad-card">Activez JavaScript pour lire ce bracelet, ou appelez l'administration : {{ admin_phone_pretty }}</p></noscript>
+  <p class="scan-foot">Page officielle KidLink · <a href="/">Accueil</a> · <a href="{% url 'public:scanner' %}">Scanner un autre bracelet</a></p>
+</main>
+{% endblock %}
