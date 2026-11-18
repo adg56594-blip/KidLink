@@ -15,7 +15,7 @@ from django.conf import settings
 from . import crypto
 
 VERSION = "1"
-FIELDS = ["expiry", "nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_phone"]
+FIELDS = ["expiry", "nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_phone", "ref"]
 
 
 def _clean(v: str) -> str:

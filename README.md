@@ -1,4 +1,4 @@
-# KidLink — Christianisme Céleste
+# Sèmè Kids — Christianisme Céleste
 
 Le bracelet qui ramène l'enfant à sa famille. Pendant les pèlerinages de l'Église du
 Christianisme Céleste, chaque enfant porte un bracelet avec un QR code. Si l'enfant se perd,
@@ -27,7 +27,7 @@ l'administration encaisse elle-même, puis génère un lien d'inscription.
 
 ## Sécurité
 
-- **Bracelets infalsifiables** : chaque QR est signé en ECDSA P-256. Modifier un seul caractère (par exemple le numéro des parents) affiche « Bracelet FALSIFIÉ », même hors ligne. Le scanner intégré signale aussi les QR qui imitent KidLink depuis un autre site. Une horloge en direct et un sceau animé rendent une capture d'écran figée facile à repérer.
+- **Bracelets infalsifiables** : chaque QR est signé en ECDSA P-256. Modifier un seul caractère (par exemple le numéro des parents) affiche « Bracelet FALSIFIÉ », même hors ligne. Le scanner intégré signale aussi les QR qui imitent Sèmè Kids depuis un autre site. Une horloge en direct et un sceau animé rendent une capture d'écran figée facile à repérer.
 - **Confidentialité du scan** : les données de l'enfant sont dans le fragment `#…` de l'adresse, que le navigateur n'envoie jamais au serveur. L'API de vérification ne renvoie **aucune** donnée personnelle, seulement l'état du bracelet.
 - **Chiffrement au repos** : noms, numéros, paroisse et QR sont chiffrés en base (Fernet, avec rotation de clés possible). Les liens et invitations ne sont stockés que sous forme d'empreinte HMAC.
 - **Comptes** :
@@ -64,7 +64,7 @@ la page d'inscription de l'administrateur principal.
 ## Tests et audit
 
 ```bash
-pytest                                    # 55 tests : crypto, accès, quotas, falsification, purge…
+pytest                                    # 57 tests : crypto, accès, quotas, falsification, purge…
 bandit -r core config                     # analyse statique de sécurité
 pip-audit -r requirements.txt             # vulnérabilités connues des dépendances
 python manage.py check --deploy           # avec les variables de production

@@ -150,7 +150,7 @@ def link_detail(request, pk):
     share = None
     if url:
         share = (
-            f"Bonjour {link.payer_name}, voici votre lien KidLink pour inscrire {link.quota} enfant(s) "
+            f"Bonjour {link.payer_name}, voici votre lien Sèmè Kids pour inscrire {link.quota} enfant(s) "
             f"au {link.event.title} : {url}  Remplissez une fiche par enfant. Ce lien est personnel, ne le partagez pas."
         )
     return render(request, "espace/link_detail.html", ctx(request, "links", link=link, url=url, share=share, regs=regs))

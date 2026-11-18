@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.contrib import messages
 from django.db import IntegrityError, transaction
+from django.db.models import Max
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -17,11 +18,11 @@ from ..models import Event, Registration, RegistrationLink, ScanLog
 from ..qr import build_fragment, verify_fragment
 from ..utils import client_ip, rate_limited
 
-SW_REVISION = "1"
+SW_REVISION = "2"
 SW_ASSETS = [
     "css/app.css", "js/app.js", "js/scan.js", "js/scanner.js", "vendor/jsQR.js",
-    "fonts/jakarta.woff2", "fonts/jakarta-ext.woff2", "fonts/fraunces.woff2", "fonts/fraunces-ext.woff2",
-    "img/ecc-logo.webp", "img/icon-192.png",
+    "fonts/jakarta.woff2", "fonts/jakarta-ext.woff2", "fonts/nunito.woff2", "fonts/nunito-ext.woff2", "fonts/nunito-italic.woff2",
+    "img/semekids-mark.svg", "img/icon-192.png",
 ]
 FAMILY_FIELDS = ["parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_name", "charge_phone"]
 
@@ -147,8 +148,9 @@ def _create_registration(link, d):
         data = {k: d.get(k, "") for k in ["nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_name", "charge_phone"]}
         data["nom"] = data["nom"].upper()
         for _ in range(5):
-            reg = Registration(link=locked, event=locked.event, **data)
-            reg.qr_fragment = build_fragment(reg.public_id, locked.event.retention_until, data)
+            last = Registration.objects.aggregate(m=Max("reference"))["m"] or 0
+            reg = Registration(link=locked, event=locked.event, reference=last + 1, **data)
+            reg.qr_fragment = build_fragment(reg.public_id, locked.event.retention_until, {**data, "ref": reg.ref_display})
             try:
                 with transaction.atomic():
                     reg.save()

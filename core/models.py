@@ -11,6 +11,10 @@ from .roles import ADMIN_ROLES, DEV_ROLES
 CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"  # sans 0/O, 1/I/L, U : lisible à l'oral
 
 
+def format_reference(n) -> str:
+    return f"SK-{n:04d}" if n else ""
+
+
 def new_public_id() -> str:
     return "".join(secrets.choice(CODE_ALPHABET) for _ in range(12))
 
@@ -144,7 +148,7 @@ class SiteSettings(models.Model):
     admin_phone = models.CharField("téléphone de l'administrateur", max_length=30, default="+229 98 18 47 59")
     admin_whatsapp = models.CharField("WhatsApp de l'administrateur", max_length=30, default="+229 98 18 47 59")
     dev_whatsapp = models.CharField("WhatsApp du développeur", max_length=30, default="+229 67 32 43 61")
-    dev_name = models.CharField("nom affiché du développeur", max_length=80, default="L'équipe technique KidLink")
+    dev_name = models.CharField("nom affiché du développeur", max_length=80, default="L'équipe technique Sèmè Kids")
     bracelet_line = models.CharField(
         "ligne d'urgence imprimée sous le QR", max_length=40, blank=True, default="Urgence : +229 98 18 47 59"
     )
@@ -293,6 +297,7 @@ class Registration(models.Model):
     link = models.ForeignKey(RegistrationLink, on_delete=models.CASCADE, related_name="registrations")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="registrations")
     public_id = models.CharField(max_length=12, unique=True, default=new_public_id)
+    reference = models.PositiveIntegerField(unique=True, null=True, blank=True)
     nom = EncryptedTextField()
     prenom = EncryptedTextField()
     parent_name = EncryptedTextField()
@@ -311,6 +316,10 @@ class Registration(models.Model):
     @property
     def full_name(self):
         return f"{self.prenom} {self.nom.upper()}".strip()
+
+    @property
+    def ref_display(self):
+        return format_reference(self.reference)
 
     @property
     def display_code(self):

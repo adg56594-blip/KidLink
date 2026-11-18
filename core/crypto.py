@@ -1,4 +1,4 @@
-"""Cryptographie de KidLink.
+"""Cryptographie de Sèmè Kids.
 
 1. Chiffrement des données personnelles en base (Fernet = AES-128-CBC + HMAC-SHA256).
    Une fuite de la base seule ne révèle ni noms ni numéros.

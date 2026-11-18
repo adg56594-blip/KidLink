@@ -5,8 +5,8 @@
 <main id="main" class="link-wrap">
   <header class="link-hero">
     <div class="hero-glow" aria-hidden="true"></div>
-    <img class="link-logo" src="{% static 'img/ecc-logo.webp' %}" alt="Église du Christianisme Céleste" width="96" height="100">
-    <p class="kicker light"><span class="dot"></span> Inscription officielle KidLink</p>
+    <img class="link-logo" src="{% static 'img/semekids-mark.svg' %}" alt="Église du Christianisme Céleste" width="96" height="100">
+    <p class="kicker light"><span class="dot"></span> Inscription officielle Sèmè Kids</p>
     <h1>{{ event.title }}</h1>
     <p class="link-meta"><svg class="ic"><use href="#i-pin"/></svg>{{ event.location }} <span>·</span> <svg class="ic"><use href="#i-cal"/></svg>{{ event.starts_on|date:"j F Y" }}</p>
     <p class="link-for">Lien réservé à <strong>{{ link.label }}</strong></p>
@@ -38,7 +38,7 @@
     {% endif %}
     {% if form.non_field_errors %}<div class="warn-box">{{ form.non_field_errors }}</div>{% endif %}
 
-    <fieldset class="fs c-orange">
+    <fieldset class="fs c-blue">
       <legend><span class="fs-ic"><svg class="ic"><use href="#i-child"/></svg></span> L'enfant</legend>
       <div class="grid2">
         {% include "partials/field.html" with field=form.nom %}
@@ -55,7 +55,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="fs c-blue">
+    <fieldset class="fs c-gold">
       <legend><span class="fs-ic"><svg class="ic"><use href="#i-home"/></svg></span> La paroisse</legend>
       {% include "partials/field.html" with field=form.paroisse %}
       <details class="optional"{% if form.charge_name.value or form.charge_phone.value or form.charge_phone.errors %} open{% endif %}>

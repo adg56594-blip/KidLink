@@ -101,7 +101,7 @@ def otp_view(request):
 
     ctx = {"form": form, "enrolling": enrolling}
     if enrolling:
-        uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name="KidLink")
+        uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name="Sèmè Kids")
         ctx["qr_svg"] = segno.make(uri, error="m").svg_inline(scale=5, dark="#0b1b3f", light="#ffffff", border=2)
         ctx["secret_display"] = " ".join(secret[i : i + 4] for i in range(0, len(secret), 4))
     return render(request, "auth/otp.html", ctx)

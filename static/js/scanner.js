@@ -1,4 +1,4 @@
-/* KidLink — scanner intégré : détecte aussi les QR qui imitent KidLink depuis un autre site. */
+/* Sèmè Kids — scanner intégré : détecte aussi les QR qui imitent Sèmè Kids depuis un autre site. */
 (function () {
   'use strict';
   var root = document.querySelector('[data-origin]');
@@ -28,12 +28,12 @@
     var url;
     try { url = new URL(text); } catch (e) { url = null; }
     if (url && origins.indexOf(url.origin) !== -1 && /^\/v\/[A-Za-z0-9]{12}\/?$/.test(url.pathname) && url.hash.length > 10) {
-      say('ok', 'Bracelet KidLink détecté. Ouverture…');
+      say('ok', 'Bracelet Sèmè Kids détecté. Ouverture…');
       stop();
       location.href = location.origin + url.pathname + url.hash;
       return true;
     }
-    say('bad', '⚠ Ce code N\'EST PAS un bracelet KidLink officiel. Ne faites pas confiance aux numéros qu\'il affiche. Appelez l\'administration.');
+    say('bad', '⚠ Ce code N\'EST PAS un bracelet Sèmè Kids officiel. Ne faites pas confiance aux numéros qu\'il affiche. Appelez l\'administration.');
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     return false;
   }

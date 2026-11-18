@@ -1,4 +1,4 @@
-/* KidLink — lecture et vérification d'un bracelet.
+/* Sèmè Kids — lecture et vérification d'un bracelet.
  * 1) Vérifie la signature ECDSA DANS le téléphone (marche sans internet).
  * 2) Si internet est disponible, confirme auprès du serveur (bracelet désactivé, expiré…).
  * Aucune donnée n'est envoyée au serveur en dehors de l'identifiant et du code signé déjà présents dans le QR.
@@ -8,7 +8,7 @@
   var root = document.querySelector('[data-pk]');
   if (!root) return;
   var $ = function (id) { return document.getElementById(id); };
-  var FIELDS = ['expiry', 'nom', 'prenom', 'parent_name', 'parent_phone', 'parent_phone2', 'paroisse', 'charge_phone'];
+  var FIELDS = ['expiry', 'nom', 'prenom', 'parent_name', 'parent_phone', 'parent_phone2', 'paroisse', 'charge_phone', 'ref'];
 
   // Horloge en direct dans le sceau : une capture d'écran ou une fausse page figée se repère.
   function tick() {
@@ -54,10 +54,11 @@
   function showChild(d, code) {
     data = d;
     var name = (d.prenom + ' ' + d.nom).trim();
-    document.title = name + ' · KidLink';
+    document.title = name + ' · Sèmè Kids';
     $('c-name').textContent = name;
     $('c-paroisse').textContent = d.paroisse || '—';
     $('c-parent').textContent = d.parent_name || '—';
+    $('c-ref').textContent = d.ref || '—';
     $('c-code').textContent = code.slice(0, 4) + '-' + code.slice(4, 8) + '-' + code.slice(8);
     $('b-call').href = telHref(d.parent_phone);
     $('b-call-num').textContent = pretty(d.parent_phone);
@@ -79,7 +80,7 @@
 
   function waUrl(pos) {
     var name = (data.prenom + ' ' + data.nom).trim();
-    var msg = 'Bonjour, j\'ai trouvé votre enfant ' + name + ' grâce à son bracelet KidLink. Il est avec moi.';
+    var msg = 'Bonjour, j\'ai trouvé votre enfant ' + name + ' grâce à son bracelet Sèmè Kids. Il est avec moi.';
     if (pos && pos.coords) {
       msg += ' Je suis ici : https://maps.google.com/?q=' + pos.coords.latitude.toFixed(5) + ',' + pos.coords.longitude.toFixed(5);
     }
@@ -121,7 +122,7 @@
     var id = (parts[1] || '').toUpperCase();
     var frag = decodeURIComponent((location.hash || '').slice(1));
     if (!/^[A-Z0-9]{12}$/.test(id) || frag.indexOf('.') < 1) {
-      return bad('Bracelet non reconnu', 'Ce code est incomplet ou n\'a pas été produit par KidLink.');
+      return bad('Bracelet non reconnu', 'Ce code est incomplet ou n\'a pas été produit par Sèmè Kids.');
     }
     var payload, sig, fields;
     try {
@@ -134,7 +135,7 @@
 
     var local = await verifyLocal(id, payload, sig);
     if (local === false) {
-      return bad('Bracelet FALSIFIÉ', 'Ce code a été modifié : la signature KidLink ne correspond pas. Les numéros affichés pourraient être faux. Appelez l\'administration.');
+      return bad('Bracelet FALSIFIÉ', 'Ce code a été modifié : la signature Sèmè Kids ne correspond pas. Les numéros affichés pourraient être faux. Appelez l\'administration.');
     }
     var d = {};
     FIELDS.forEach(function (f, i) { d[f] = fields[i + 1] || ''; });
@@ -152,10 +153,10 @@
       else seal('warn', 'Vérification impossible', 'Pas d\'internet : soyez prudent');
       return;
     }
-    if (res.status === 'valid') return seal('ok', 'Bracelet authentique', 'Vérifié en ligne · ' + (res.event || 'KidLink'));
-    if (res.status === 'revoked') return bad('Bracelet désactivé', 'Ce bracelet a été déclaré perdu ou volé. Appelez l\'administration KidLink.');
+    if (res.status === 'valid') return seal('ok', 'Bracelet authentique', 'Vérifié en ligne · ' + (res.event || 'Sèmè Kids'));
+    if (res.status === 'revoked') return bad('Bracelet désactivé', 'Ce bracelet a été déclaré perdu ou volé. Appelez l\'administration Sèmè Kids.');
     if (res.status === 'expired') return bad('Bracelet expiré', 'Les données de cet événement ont été effacées. Si un enfant est perdu, appelez l\'administration.');
-    if (res.status === 'forged') return bad('Bracelet FALSIFIÉ', 'Ce code n\'a pas été produit par KidLink. Les numéros pourraient être faux. Appelez l\'administration.');
+    if (res.status === 'forged') return bad('Bracelet FALSIFIÉ', 'Ce code n\'a pas été produit par Sèmè Kids. Les numéros pourraient être faux. Appelez l\'administration.');
     if (local === true) seal('offline', 'Bracelet authentique', 'Signature vérifiée dans ce téléphone');
   }
   run();

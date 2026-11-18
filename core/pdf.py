@@ -68,8 +68,8 @@ def build_pdf(registrations, *, title: str, subtitle: str, bracelet_line: str = 
     page_w, page_h = A4
     c = canvas.Canvas(buf, pagesize=A4, pageCompression=1)
     c.setTitle(title)
-    c.setAuthor("KidLink")
-    c.setCreator("KidLink")
+    c.setAuthor("Sèmè Kids")
+    c.setCreator("Sèmè Kids")
     cell_w = (page_w - 2 * MARGIN_X) / COLS
     cell_h = (page_h - 2 * MARGIN_Y) / ROWS
     regs = list(registrations)
@@ -80,7 +80,7 @@ def build_pdf(registrations, *, title: str, subtitle: str, bracelet_line: str = 
         # En-tête discret pour l'imprimeur
         c.setFont("KL", 7)
         c.setFillColor(HexColor("#5b6478"))
-        c.drawString(MARGIN_X, page_h - 7 * mm, f"KidLink · {title} · {subtitle}")
+        c.drawString(MARGIN_X, page_h - 7 * mm, f"Sèmè Kids · {title} · {subtitle}")
         c.drawRightString(page_w - MARGIN_X, page_h - 7 * mm, f"Page {p + 1}/{pages} · {len(regs)} bracelet(s)")
         c.drawString(MARGIN_X, 5 * mm, "Découper le long des pointillés. Ne pas réduire la taille des QR codes à l'impression (échelle 100 %).")
 
@@ -101,9 +101,11 @@ def build_pdf(registrations, *, title: str, subtitle: str, bracelet_line: str = 
             name, size = _fit(c, reg.full_name, "KL-Bold", 10, cell_w - 4 * mm)
             c.setFont("KL-Bold", size)
             c.drawCentredString(x0 + cell_w / 2, qy - 4.2 * mm, name)
-            c.setFont("KL", 6.5)
+            c.setFont("KL-Bold", 7.5)
+            c.setFillColor(HexColor("#0A46A8"))
+            ref = reg.ref_display or reg.display_code
+            c.drawCentredString(x0 + cell_w / 2, qy - 7.4 * mm, f"{ref} · Sèmè Kids")
             c.setFillColor(HexColor("#333a48"))
-            c.drawCentredString(x0 + cell_w / 2, qy - 7.2 * mm, f"Code {reg.display_code}")
             if bracelet_line:
                 line, s2 = _fit(c, bracelet_line, "KL", 6.5, cell_w - 4 * mm)
                 c.setFont("KL", s2)

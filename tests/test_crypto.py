@@ -56,3 +56,15 @@ def test_tokens_are_stored_hashed(link_factory):
     link = link_factory()
     assert link.raw_token not in link.token_hash
     assert link.token_hash == crypto.token_hash(link.raw_token)
+
+
+def test_reference_is_sequential_and_signed(link_factory):
+    from core.qr import verify_fragment
+    from core.views.public import _create_registration
+
+    from .conftest import CHILD
+
+    link = link_factory(quota=3)
+    regs = [_create_registration(link, {**CHILD, "prenom": p, "parent_phone": "+2290197000000"}) for p in ("A", "B")]
+    assert [r.ref_display for r in regs] == ["SK-0001", "SK-0002"]
+    assert verify_fragment(regs[1].public_id, regs[1].qr_fragment).data["ref"] == "SK-0002"

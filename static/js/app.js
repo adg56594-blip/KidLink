@@ -1,4 +1,4 @@
-/* KidLink — comportements communs (sans dépendance). */
+/* Sèmè Kids — comportements communs (sans dépendance). */
 (function () {
   'use strict';
   document.documentElement.classList.add('js');

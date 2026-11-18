@@ -10,13 +10,14 @@
   <div class="hero-text reveal">
     <p class="kicker"><span class="dot"></span> Église du Christianisme Céleste</p>
     <h1>Aucun enfant ne doit <em>se perdre</em>.</h1>
+    <p class="tagline">Sèmè Kids — Protège nos enfants, aujourd'hui et demain !</p>
     <p class="lead">Un bracelet au poignet. Un passant le scanne avec son téléphone, et il appelle tout de suite le papa ou la maman. Même sans internet.</p>
     <div class="hero-cta">
-      <a class="btn btn-primary btn-lg" href="https://wa.me/{{ admin_wa }}?text={{ 'Bonjour, je souhaite obtenir des bracelets KidLink pour mes enfants.'|urlencode }}" target="_blank" rel="noopener noreferrer">
+      <a class="btn btn-primary btn-lg" href="https://wa.me/{{ admin_wa }}?text={{ 'Bonjour, je souhaite obtenir des bracelets Sèmè Kids pour mes enfants.'|urlencode }}" target="_blank" rel="noopener noreferrer">
         <svg class="ic"><use href="#i-wa"/></svg> Obtenir un bracelet</a>
       <a class="btn btn-light btn-lg" href="tel:+{{ admin_phone_tel }}"><svg class="ic"><use href="#i-phone"/></svg> Appeler</a>
     </div>
-    <button class="speak" type="button" data-speak="Bienvenue sur KidLink. Un bracelet avec un code est mis au poignet de votre enfant. Si l'enfant se perd, n'importe qui scanne le bracelet avec son téléphone et vous appelle tout de suite. Pour avoir un bracelet, appuyez sur le bouton vert et parlez à l'administration."><svg class="ic"><use href="#i-sound"/></svg> Écouter</button>
+    <button class="speak" type="button" data-speak="Bienvenue sur Sèmè Kids. Un bracelet avec un code est mis au poignet de votre enfant. Si l'enfant se perd, n'importe qui scanne le bracelet avec son téléphone et vous appelle tout de suite. Pour avoir un bracelet, appuyez sur le bouton vert et parlez à l'administration."><svg class="ic"><use href="#i-sound"/></svg> Écouter</button>
   </div>
 
   <div class="hero-art reveal" aria-hidden="true">
@@ -28,10 +29,10 @@
       <path pathLength="1" d="M108 220a92 92 0 0 1 184 0" class="a5"/>
       <path pathLength="1" d="M130 220a70 70 0 0 1 140 0" class="a6"/>
     </svg>
-    <img class="hero-logo" src="{% static 'img/ecc-logo.webp' %}" alt="" width="220" height="228">
+    <img class="hero-logo" src="{% static 'img/semekids-mark.svg' %}" alt="" width="220" height="228">
     <div class="band-card float">
       <div class="band-qr"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      <div><strong>Bracelet authentique</strong><small>Vérifié · signé KidLink</small></div>
+      <div><strong>Bracelet authentique</strong><small>Vérifié · signé Sèmè Kids</small></div>
       <svg class="ic ok"><use href="#i-shield"/></svg>
     </div>
     <div class="call-card float-slow">
@@ -77,10 +78,10 @@
 <section class="steps" aria-labelledby="how">
   <h2 id="how" class="section-title reveal">Comment ça marche&nbsp;?</h2>
   <ol class="step-grid">
-    <li class="step reveal c-red"><span class="step-n">1</span><span class="step-ic"><svg class="ic"><use href="#i-cash"/></svg></span><h3>Je paie</h3><p>Auprès de l'administration ou du chargé de ma paroisse.</p></li>
-    <li class="step reveal c-orange"><span class="step-n">2</span><span class="step-ic"><svg class="ic"><use href="#i-form"/></svg></span><h3>Je remplis</h3><p>On m'envoie un lien. J'écris le nom de l'enfant et mon numéro. C'est tout.</p></li>
-    <li class="step reveal c-green"><span class="step-n">3</span><span class="step-ic"><svg class="ic"><use href="#i-band"/></svg></span><h3>Il porte le bracelet</h3><p>Pendant tout le pèlerinage, au poignet de l'enfant.</p></li>
-    <li class="step reveal c-blue"><span class="step-n">4</span><span class="step-ic"><svg class="ic"><use href="#i-phone"/></svg></span><h3>On m'appelle</h3><p>S'il se perd, quelqu'un scanne le bracelet et m'appelle directement.</p></li>
+    <li class="step reveal c-blue"><span class="step-n">1</span><span class="step-ic"><svg class="ic"><use href="#i-cash"/></svg></span><h3>Je paie</h3><p>Auprès de l'administration ou du chargé de ma paroisse.</p></li>
+    <li class="step reveal c-green"><span class="step-n">2</span><span class="step-ic"><svg class="ic"><use href="#i-form"/></svg></span><h3>Je remplis</h3><p>On m'envoie un lien. J'écris le nom de l'enfant et mon numéro. C'est tout.</p></li>
+    <li class="step reveal c-gold"><span class="step-n">3</span><span class="step-ic"><svg class="ic"><use href="#i-band"/></svg></span><h3>Il porte le bracelet</h3><p>Pendant tout le pèlerinage, au poignet de l'enfant.</p></li>
+    <li class="step reveal c-violet"><span class="step-n">4</span><span class="step-ic"><svg class="ic"><use href="#i-phone"/></svg></span><h3>On m'appelle</h3><p>S'il se perd, quelqu'un scanne le bracelet et m'appelle directement.</p></li>
   </ol>
 </section>
 
@@ -94,6 +95,28 @@
     <a class="btn btn-sun btn-lg" href="{% url 'public:scanner' %}"><svg class="ic"><use href="#i-scan"/></svg> Scanner le bracelet</a>
   </div>
 </section>
+
+<section class="why" aria-label="Pourquoi Sèmè Kids">
+  <div class="why-card reveal">
+    <h2>Pourquoi c'est important&nbsp;?</h2>
+    <ul class="checklist">
+      <li><svg class="ic"><use href="#i-check"/></svg>Évite la contrefaçon</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>Garantit la sécurité de l'enfant</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>Renforce la confiance des parents</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>Valorise la marque Sèmè Kids</li>
+    </ul>
+  </div>
+  <div class="system reveal">
+    <h2><svg class="ic"><use href="#i-lock"/></svg>Un système de protection complet</h2>
+    <div class="sys-item"><span class="n">123</span><div><b>Numéro unique pour chaque bracelet</b><small>Référence SK-0001, SK-0002…</small></div></div>
+    <div class="sys-item"><span class="n"><svg class="ic"><use href="#i-scan"/></svg></span><div><b>QR code individuel et signé</b><small>Relié à notre plateforme, impossible à imiter</small></div></div>
+    <div class="sys-item"><span class="n"><svg class="ic"><use href="#i-lock"/></svg></span><div><b>Base de données centralisée et chiffrée</b><small>Effacée après chaque événement</small></div></div>
+    <div class="sys-item"><span class="n"><svg class="ic"><use href="#i-shield"/></svg></span><div><b>Page de vérification</b><small>Pour confirmer l'authenticité, même sans internet</small></div></div>
+    <div class="sys-item"><span class="n"><svg class="ic"><use href="#i-log"/></svg></span><div><b>Contrôle des scans</b><small>Pour détecter les copies</small></div></div>
+  </div>
+</section>
+
+<p class="slogan reveal">Sèmè <span>Kids</span> · Un bracelet intelligent pour une enfance en sécurité&nbsp;!</p>
 
 <section class="trust" aria-labelledby="trust">
   <h2 id="trust" class="section-title reveal">Pensé pour protéger vos enfants</h2>

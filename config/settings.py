@@ -1,4 +1,4 @@
-"""Réglages Django de KidLink.
+"""Réglages Django de Sèmè Kids.
 
 Tout ce qui est secret ou dépend de l'hébergement se lit dans des variables
 d'environnement (voir .env.example). En production (DEBUG désactivé), l'absence

@@ -1,4 +1,4 @@
-/* KidLink service worker — lecture des bracelets hors ligne. */
+/* Sèmè Kids service worker — lecture des bracelets hors ligne. */
 'use strict';
 const CACHE = 'kidlink-{{ version }}';
 const CORE = [

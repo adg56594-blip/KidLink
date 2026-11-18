@@ -153,3 +153,14 @@ def test_service_worker_and_manifest(client):
     assert sw.status_code == 200 and sw["Service-Worker-Allowed"] == "/"
     assert "/v/_/" in sw.content.decode() and "/espace/" in sw.content.decode()
     assert client.get("/manifest.webmanifest").status_code == 200
+
+
+def test_service_worker_assets_all_exist(client):
+    """Si un fichier listé manque, le mode hors ligne ne s'installe pas : on le vérifie."""
+    import re
+
+    from django.contrib.staticfiles import finders
+
+    body = client.get("/sw.js").content.decode()
+    for path in re.findall(r"'/static/([^']+)'", body):
+        assert finders.find(path), path

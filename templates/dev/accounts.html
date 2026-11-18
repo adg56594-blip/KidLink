@@ -6,7 +6,7 @@
 <section class="newlink">
   <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Page d'inscription de l'administrateur prête</h2><p>Valable 48 h, une seule fois. Elle ne sera plus affichée.</p></div></div>
   <div class="copy-row"><input id="pa-link" readonly value="{{ invite_url }}" aria-label="Lien"><button class="btn btn-light" type="button" data-copy="#pa-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
-  <a class="btn btn-wa" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ admin_wa }}?text={% filter urlencode %}Bonjour, voici votre page d'inscription d'administrateur KidLink (valable 48 h, une seule fois) : {{ invite_url }}{% endfilter %}"><svg class="ic"><use href="#i-wa"/></svg> Envoyer à l'administrateur</a>
+  <a class="btn btn-wa" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ admin_wa }}?text={% filter urlencode %}Bonjour, voici votre page d'inscription d'administrateur Sèmè Kids (valable 48 h, une seule fois) : {{ invite_url }}{% endfilter %}"><svg class="ic"><use href="#i-wa"/></svg> Envoyer à l'administrateur</a>
 </section>
 {% endif %}
 {% if not has_principal %}

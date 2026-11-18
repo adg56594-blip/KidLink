@@ -4,7 +4,7 @@
 {% block content %}
 <section class="stats">
   <article class="stat c-blue"><span class="stat-ic"><svg class="ic"><use href="#i-child"/></svg></span><p>Bracelets générés</p><b>{{ registrations }}</b><small>{{ events }} événement(s) à venir</small></article>
-  <article class="stat c-orange"><span class="stat-ic"><svg class="ic"><use href="#i-clock"/></svg></span><p>PDF en attente de livraison</p><b>{{ pending_count }}</b><small>décision des développeurs</small></article>
+  <article class="stat c-gold"><span class="stat-ic"><svg class="ic"><use href="#i-clock"/></svg></span><p>PDF en attente de livraison</p><b>{{ pending_count }}</b><small>décision des développeurs</small></article>
   <article class="stat c-green"><span class="stat-ic"><svg class="ic"><use href="#i-scan"/></svg></span><p>Scans (7 j)</p><b>{{ scans_week }}</b><small>tous résultats</small></article>
   <article class="stat c-red"><span class="stat-ic"><svg class="ic"><use href="#i-alert"/></svg></span><p>Bracelets falsifiés (7 j)</p><b>{{ forged_week }}</b><small>tentatives détectées</small></article>
 </section>
