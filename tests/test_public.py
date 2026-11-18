@@ -164,3 +164,8 @@ def test_service_worker_assets_all_exist(client):
     body = client.get("/sw.js").content.decode()
     for path in re.findall(r"'/static/([^']+)'", body):
         assert finders.find(path), path
+
+
+def test_healthz_ok_when_database_is_migrated(client):
+    r = client.get("/healthz/")
+    assert r.status_code == 200 and r.content == b"ok"

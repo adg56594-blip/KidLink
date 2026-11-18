@@ -196,7 +196,9 @@ def offline(request):
 def healthz(request):
     """Contrôle de santé Railway : vérifie que la base répond."""
     from django.db import connection
+    from django.db.migrations.executor import MigrationExecutor
 
-    with connection.cursor() as c:
-        c.execute("SELECT 1")
+    executor = MigrationExecutor(connection)
+    if executor.migration_plan(executor.loader.graph.leaf_nodes()):
+        return HttpResponse("migrations en attente", status=503, content_type="text/plain")
     return HttpResponse("ok", content_type="text/plain")
