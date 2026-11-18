@@ -263,6 +263,8 @@ def test_predeploy_creates_one_time_lead_dev_link(db, capsys):
 
     call_command("predeploy")
     url = re.search(r"/invitation/([\w\-]+)/", capsys.readouterr().out).group(1)
+    page = Client().get(f"/invitation/{url}/").content.decode()
+    assert "développeur principal" in page and "administrateur principal" not in page
     r = Client().post(f"/invitation/{url}/", {"full_name": "Dev Chef", "email": "chef-dev@t.bj",
                                                "password1": "Un-Mot-De-Passe-Long-2026", "password2": "Un-Mot-De-Passe-Long-2026"})
     assert r.status_code == 302

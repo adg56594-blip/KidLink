@@ -1,0 +1,29 @@
+{% extends "auth/_layout.html" %}
+{% block title %}Compte développeur principal{% endblock %}
+{% block side_quote %}Vous êtes le gardien technique de Sèmè Kids.<span>Développeur principal</span>{% endblock %}
+{% block auth %}
+<div class="auth-card wide">
+  <p class="kicker"><span class="dot"></span> Première installation · lien unique</p>
+  <h1>Créez le compte du développeur principal</h1>
+  <p class="muted">Ce compte a accès à toute la plateforme. Ce lien ne fonctionne qu'une seule fois.</p>
+  <ul class="perks">
+    <li><svg class="ic"><use href="#i-users"/></svg> Créer la page d'inscription de l'administrateur</li>
+    <li><svg class="ic"><use href="#i-send"/></svg> Décider de l'envoi des PDF</li>
+    <li><svg class="ic"><use href="#i-code"/></svg> Nommer des sous-développeurs</li>
+    <li><svg class="ic"><use href="#i-log"/></svg> Surveiller le journal de sécurité</li>
+  </ul>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.full_name %}
+      {% include "partials/field.html" with field=form.phone %}
+    </div>
+    {% include "partials/field.html" with field=form.email %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.password1 %}
+      {% include "partials/field.html" with field=form.password2 %}
+    </div>
+    <button class="btn btn-primary btn-lg btn-block" type="submit"><svg class="ic"><use href="#i-code"/></svg> Créer mon compte développeur</button>
+  </form>
+</div>
+{% endblock %}

@@ -155,7 +155,10 @@ def accept_invitation(request, token):
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         request.session["otp_ok"] = False
         return redirect("auth:otp")
-    tpl = "auth/register_admin.html" if principal else "auth/invite.html"
+    tpl = {
+        Invitation.PRINCIPAL_ADMIN: "auth/register_admin.html",
+        Invitation.LEAD_DEV: "auth/register_dev.html",
+    }.get(inv.kind, "auth/invite.html")
     return render(request, tpl, {"form": form, "inv": inv})
 
 
