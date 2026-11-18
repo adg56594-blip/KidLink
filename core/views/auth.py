@@ -122,8 +122,9 @@ def accept_invitation(request, token):
     inv = Invitation.objects.filter(token_hash=crypto.token_hash(token)).select_related("created_by").first()
     if inv is None or not inv.usable:
         return render(request, "auth/invite_invalid.html", status=404)
-    principal = inv.kind == Invitation.PRINCIPAL_ADMIN
-    if principal and User.objects.filter(kind=User.ADMIN, is_principal=True).exists():
+    principal = inv.kind in (Invitation.PRINCIPAL_ADMIN, Invitation.LEAD_DEV)
+    kind = User.DEVELOPER if inv.kind in (Invitation.SUB_DEV, Invitation.LEAD_DEV) else User.ADMIN
+    if principal and User.objects.filter(kind=kind, is_principal=True).exists():
         return render(request, "auth/invite_invalid.html", status=404)
     if request.user.is_authenticated:
         logout(request)
@@ -138,7 +139,6 @@ def accept_invitation(request, token):
             inv = Invitation.objects.select_for_update().get(pk=inv.pk)
             if not inv.usable:
                 return render(request, "auth/invite_invalid.html", status=404)
-            kind = User.DEVELOPER if inv.kind == Invitation.SUB_DEV else User.ADMIN
             user = User.objects.create_user(
                 email=inv.email or d["email"],
                 password=d["password1"],

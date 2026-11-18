@@ -2,7 +2,7 @@
 {% block title %}Activer mon compte{% endblock %}
 {% block auth %}
 <div class="auth-card wide">
-  <p class="kicker"><span class="dot"></span> Invitation de {{ inv.created_by.full_name }}</p>
+  <p class="kicker"><span class="dot"></span> {% if inv.created_by %}Invitation de {{ inv.created_by.full_name }}{% else %}Première installation{% endif %}</p>
   <h1>Activez votre compte {{ inv.get_kind_display|lower }}</h1>
   <p class="muted">Choisissez un mot de passe solide. Vous configurerez ensuite la double authentification.</p>
   <form method="post" novalidate>

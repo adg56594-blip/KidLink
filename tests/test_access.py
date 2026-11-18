@@ -254,3 +254,19 @@ def test_csrf_enforced(admin):
     c = Client(enforce_csrf_checks=True)
     r = c.post("/connexion/", {"email": admin.email, "password": PWD})
     assert r.status_code == 403
+
+
+def test_predeploy_creates_one_time_lead_dev_link(db, capsys):
+    import re
+
+    from django.core.management import call_command
+
+    call_command("predeploy")
+    url = re.search(r"/invitation/([\w\-]+)/", capsys.readouterr().out).group(1)
+    r = Client().post(f"/invitation/{url}/", {"full_name": "Dev Chef", "email": "chef-dev@t.bj",
+                                               "password1": "Un-Mot-De-Passe-Long-2026", "password2": "Un-Mot-De-Passe-Long-2026"})
+    assert r.status_code == 302
+    assert User.objects.get(email="chef-dev@t.bj").is_lead_dev
+    assert Client().get(f"/invitation/{url}/").status_code == 404  # usage unique
+    call_command("predeploy")
+    assert "déjà présent" in capsys.readouterr().out  # plus aucun nouveau lien

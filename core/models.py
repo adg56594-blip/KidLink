@@ -112,10 +112,12 @@ class User(AbstractBaseUser):
 class Invitation(models.Model):
     """Lien d'activation de compte, à usage unique, valable 72 h."""
 
+    LEAD_DEV = "lead_dev"
     PRINCIPAL_ADMIN = "principal_admin"
     SUB_ADMIN = "sub_admin"
     SUB_DEV = "sub_dev"
     KINDS = [
+        (LEAD_DEV, "Développeur principal"),
         (PRINCIPAL_ADMIN, "Administrateur principal"),
         (SUB_ADMIN, "Sous-administrateur"),
         (SUB_DEV, "Sous-développeur"),
@@ -125,7 +127,7 @@ class Invitation(models.Model):
     full_name = models.CharField(max_length=120, blank=True)
     roles = models.JSONField(default=list, blank=True)
     token_hash = models.CharField(max_length=64, unique=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="+")
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
