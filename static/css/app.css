@@ -801,3 +801,7 @@ progress::-moz-progress-bar{background:linear-gradient(90deg,var(--g),#5ad08f);b
 .team-list small{color:var(--muted)}
 @media(max-width:400px){.team-list .btn span{display:none}}
 .sub-h{margin-top:28px}
+.del-list{list-style:none;margin:14px 0;padding:0;display:grid;gap:10px}
+.del-list li{display:flex;gap:10px;align-items:flex-start}
+.del-list .ic{margin-top:3px;flex:none}
+.del-list li:first-child .ic{color:var(--bad)}.del-list li .ic{color:var(--ok)}

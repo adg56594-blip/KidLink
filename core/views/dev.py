@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
-from ..forms import EventForm, InviteForm, LinkForm, PurgeForm, ResetDataForm, RolesForm, SettingsForm, link_expiry
+from ..forms import DeleteAccountForm, EventForm, InviteForm, LinkForm, PurgeForm, ResetDataForm, RolesForm, SettingsForm, link_expiry
 from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, User
 from ..roles import DEV_ROLES, clean_roles
 from ..security import developer_required, lead_dev_required, role_required, two_factor_paused_until
@@ -324,6 +324,29 @@ def password_reset_link(request, pk):
     audit(request, "password_reset_link_created", target.email)
     request.session["reset_link"] = {"url": url, "name": target.full_name, "phone": wa_number(target.phone), "pk": target.pk}
     return back
+
+
+@lead_dev_required
+@require_http_methods(["GET", "POST"])
+def admin_delete(request, pk):
+    """Supprimer le compte administrateur (ex. compte de test) pour inviter le vrai.
+    Développeur principal uniquement, avec mot de passe + code. Les liens et paiements restent."""
+    target = get_object_or_404(User, pk=pk, kind=User.ADMIN)
+    form = DeleteAccountForm(request.POST or None, user=request.user)
+    if request.method == "POST":
+        if _reauth_blocked(request):
+            return redirect("auth:login")
+        if not form.is_valid():
+            _reauth_failed(request)
+        else:
+            label = f"{target.full_name} <{target.email}>"
+            Invitation.objects.filter(target=target).delete()
+            target.delete()  # ses sessions deviennent invalides immédiatement
+            audit(request, "admin_deleted", label)
+            messages.success(request, f"Compte de {label} supprimé. Vous pouvez maintenant inviter le vrai administrateur.")
+            return redirect("dev:accounts")
+    stats = {"links": RegistrationLink.objects.filter(created_by=target).count()}
+    return render(request, "dev/admin_delete.html", ctx("accounts", target=target, form=form, stats=stats))
 
 
 # ================================================================== équipe technique

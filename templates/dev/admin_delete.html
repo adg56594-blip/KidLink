@@ -1,0 +1,28 @@
+{% extends "dev/base.html" %}
+{% block title %}Supprimer le compte administrateur{% endblock %}
+{% block crumb %}Compte administrateur · développeur principal uniquement{% endblock %}
+{% block page_title %}Supprimer ce compte{% endblock %}
+{% block content %}
+<div class="panel narrow danger-panel">
+  <svg class="ic big"><use href="#i-alert"/></svg>
+  <h2>Supprimer le compte de {{ target.full_name }}</h2>
+  <p class="muted">{{ target.email }}{% if target.last_login %} · dernière connexion le {{ target.last_login|date:"j F Y à H:i" }}{% else %} · jamais connecté{% endif %}</p>
+  <ul class="del-list">
+    <li><svg class="ic"><use href="#i-x"/></svg> Le compte est supprimé définitivement : cette personne ne pourra plus se connecter, même si elle est connectée en ce moment.</li>
+    <li><svg class="ic"><use href="#i-check"/></svg> Les {{ stats.links }} lien(s) et paiement(s) qu'il a créés <b>restent</b> (ainsi que les enfants inscrits et les gains).</li>
+    <li><svg class="ic"><use href="#i-check"/></svg> Ensuite, vous pourrez générer le lien d'inscription du vrai administrateur.</li>
+  </ul>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="warn-box" role="alert"><svg class="ic"><use href="#i-alert"/></svg><div>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div></div>{% endif %}
+    {% include "partials/field.html" with field=form.confirm %}
+    {% include "partials/field.html" with field=form.password %}
+    {% if form.code %}{% include "partials/field.html" with field=form.code %}{% endif %}
+    <p class="help">Votre mot de passe et votre code (pas ceux de l'administrateur). 3 essais ratés = déconnexion.</p>
+    <div class="form-actions">
+      <a class="btn btn-light" href="{% url 'dev:accounts' %}">Annuler</a>
+      <button class="btn btn-danger" type="submit"><svg class="ic"><use href="#i-x"/></svg> Supprimer définitivement</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

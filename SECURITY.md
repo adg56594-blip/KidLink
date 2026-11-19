@@ -80,7 +80,7 @@ Contrôles complémentaires :
 | Mots de passe | Argon2id |
 | Liens d'inscription, invitations | seule une empreinte HMAC-SHA256 est stockée |
 | Secrets 2FA | chiffrés en base |
-| `pytest` (86 tests unitaires et d'intégration) | 86 réussis |
+| `pytest` (88 tests unitaires et d'intégration) | 88 réussis |
 | `bandit` (analyse statique Python) | 0 problème |
 | `pip-audit` (vulnérabilités connues des dépendances) | 0 vulnérabilité |
 | `manage.py check --deploy` | 0 avertissement |

@@ -489,3 +489,31 @@ def test_reset_password_command_for_lead_dev(lead_dev, capsys):
     assert "/nouveau-mot-de-passe/" in out
     lead_dev.refresh_from_db()
     assert not lead_dev.totp_confirmed
+
+
+def test_lead_dev_deletes_test_admin_then_invites_real_one(client, lead_dev, admin, registration):
+    url = f"/dev/administrateur/{admin.pk}/supprimer/"
+    session_admin = Client()
+    staff_client(session_admin, admin)
+    staff_client(client, lead_dev)
+    assert client.get(url).status_code == 200
+    client.post(url, {"confirm": "SUPPRIMER", "password": "faux", "code": fresh_code(lead_dev)})
+    client.post(url, {"confirm": "oui", "password": PWD, "code": fresh_code(lead_dev)})
+    assert User.objects.filter(pk=admin.pk).exists()  # refusé
+    r = client.post(url, {"confirm": "SUPPRIMER", "password": PWD, "code": fresh_code(lead_dev)})
+    assert r.status_code == 302 and not User.objects.filter(pk=admin.pk).exists()
+    assert RegistrationLink.objects.filter(pk=registration.link_id).exists()  # les paiements restent
+    assert session_admin.get("/espace/").status_code == 302  # l'admin connecté est éjecté
+    assert "Créer l'accès de l'administrateur" in client.get("/dev/administrateur/").content.decode()
+    assert AuditLog.objects.filter(action="admin_deleted").exists()
+
+
+def test_only_lead_dev_can_delete_admin(admin, lead_dev):
+    acc = make_user("acc2@t.bj", User.DEVELOPER, roles=["accounts"])
+    for u in (acc, admin):
+        c = Client()
+        staff_client(c, u)
+        assert c.get(f"/dev/administrateur/{admin.pk}/supprimer/").status_code == 403
+    c = Client()
+    staff_client(c, lead_dev)
+    assert c.get(f"/dev/administrateur/{lead_dev.pk}/supprimer/").status_code == 404  # pas un administrateur

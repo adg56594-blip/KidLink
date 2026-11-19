@@ -243,6 +243,16 @@ class PurgeForm(ReauthForm):
         return "VIDER"
 
 
+class DeleteAccountForm(ReauthForm):
+    confirm = forms.CharField(label="Tapez SUPPRIMER pour confirmer", max_length=12, widget=forms.TextInput(attrs={"autocomplete": "off", "autocapitalize": "characters"}))
+    field_order = ["confirm", "password", "code"]
+
+    def clean_confirm(self):
+        if self.cleaned_data["confirm"].strip().upper() != "SUPPRIMER":
+            raise forms.ValidationError("Tapez exactement SUPPRIMER.")
+        return "SUPPRIMER"
+
+
 RESET_PHRASE = "EFFACER LES DONNÉES DE TEST"
 
 

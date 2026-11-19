@@ -45,6 +45,7 @@ dev_patterns = [
     path("administrateur/", dev.accounts, name="accounts"),
     path("administrateur/inscription/", dev.principal_invite, name="principal_invite"),
     path("administrateur/<int:pk>/action/", dev.account_action, name="account_action"),
+    path("administrateur/<int:pk>/supprimer/", dev.admin_delete, name="admin_delete"),
     path("comptes/<int:pk>/mot-de-passe/", dev.password_reset_link, name="password_reset_link"),
     path("equipe/", dev.team, name="team"),
     path("equipe/<int:pk>/", dev.team_member, name="team_member"),
