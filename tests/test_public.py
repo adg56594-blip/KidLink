@@ -109,7 +109,7 @@ def verify(client, reg_id, frag):
 def test_api_verify_states(client, registration):
     r = verify(client, registration.public_id, registration.qr_fragment).json()
     assert r["status"] == "valid"
-    assert set(r) <= {"status", "checked_at", "event"}  # aucune donnée personnelle renvoyée
+    assert set(r) <= {"status", "checked_at", "event", "charge_name"}  # rien d'autre que ce que le bracelet contient
     assert verify(client, registration.public_id, registration.qr_fragment[:-3] + "AAA").json()["status"] == "forged"
     assert verify(client, "ZZZZZZZZZZZZ", registration.qr_fragment).json()["status"] == "forged"
     registration.revoked_at = timezone.now()
@@ -185,3 +185,24 @@ def test_500_page_works_without_database(rf):
     with mock.patch("core.models.SiteSettings.get", side_effect=RuntimeError("base indisponible")):
         r = server_error(rf.get("/"))
     assert r.status_code == 500 and "Un problème est survenu" in r.content.decode()
+
+
+
+def test_api_completes_charge_name_for_old_bracelets(client, link_factory):
+    import json
+
+    from core import crypto
+    from core.models import Registration
+    from core.qr import SIGN_PREFIX
+    from core.views.public import _create_registration
+
+    reg = _create_registration(link_factory(), {**CHILD, "charge_name": "Frère Paul", "charge_phone": "+2290165000000", "parent_phone": "+2290197000000"})
+    # On simule un bracelet de l'ancien format (version 1, sans le nom du chargé)
+    payload = f"1|20991231|HOUNSOU|Marie|Rosine|+2290197000000||Akpakpa|+2290165000000|{reg.ref_display}"
+    old = crypto.b64u(payload.encode()) + "." + crypto.b64u(crypto.sign(f"{SIGN_PREFIX}|{reg.public_id}|{payload}".encode()))
+    Registration.objects.filter(pk=reg.pk).update(qr_fragment=old)
+    r = client.post("/api/verify/", data=json.dumps({"id": reg.public_id, "f": old}), content_type="application/json").json()
+    assert r["status"] == "valid" and r["charge_name"] == "Frère Paul"
+    # Nouveau format : le nom est déjà dans le QR, le serveur n'ajoute rien
+    r2 = client.post("/api/verify/", data=json.dumps({"id": reg.public_id, "f": "x.y"}), content_type="application/json").json()
+    assert "charge_name" not in r2

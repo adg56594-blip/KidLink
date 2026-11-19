@@ -573,3 +573,19 @@ def test_edit_forbidden_without_registrations_role(client, lead_dev, registratio
     sub = make_user("links3@t.bj", User.DEVELOPER, roles=["links"])
     staff_client(client, sub)
     assert client.get(f"/dev/enfants/{registration.pk}/modifier/").status_code == 403
+
+
+def test_saving_old_format_fiche_upgrades_qr(client, lead_dev, registration):
+    from core.qr import SIGN_PREFIX, verify_fragment
+
+    r = registration
+    payload = f"1|20991231|{r.nom}|{r.prenom}|{r.parent_name}|{r.parent_phone}||{r.paroisse}||{r.ref_display}"
+    old = crypto.b64u(payload.encode()) + "." + crypto.b64u(crypto.sign(f"{SIGN_PREFIX}|{r.public_id}|{payload}".encode()))
+    Registration.objects.filter(pk=r.pk).update(qr_fragment=old, charge_name="Frère Paul")
+    staff_client(client, lead_dev)
+    same = {"nom": r.nom, "prenom": r.prenom, "parent_name": r.parent_name, "parent_phone": r.parent_phone, "parent_phone2": "",
+            "paroisse": r.paroisse, "charge_name": "Frère Paul", "charge_phone": "", "password": PWD, "code": fresh_code(lead_dev)}
+    client.post(f"/dev/enfants/{r.pk}/modifier/", same)
+    r.refresh_from_db()
+    d = verify_fragment(r.public_id, r.qr_fragment)
+    assert d.payload.startswith("2|") and d.data["charge_name"] == "Frère Paul" and r.reprint_needed

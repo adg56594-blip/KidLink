@@ -168,7 +168,15 @@
       else seal('warn', 'Vérification impossible', 'Pas d\'internet : soyez prudent');
       return;
     }
-    if (res.status === 'valid') return seal('ok', 'Bracelet authentique', 'Vérifié en ligne · ' + (res.event || 'Sèmè Kids'));
+    if (res.status === 'valid') {
+      if (res.charge_name && !data.charge_name) {  // ancien bracelet : nom du chargé fourni par le serveur
+        data.charge_name = res.charge_name;
+        $('c-charge-row').hidden = false;
+        $('c-charge').textContent = res.charge_name;
+        if (data.charge_phone) $('b-charge-name').textContent = res.charge_name + ' (chargé)';
+      }
+      return seal('ok', 'Bracelet authentique', 'Vérifié en ligne · ' + (res.event || 'Sèmè Kids'));
+    }
     if (res.status === 'replaced') return bad('Bracelet plus à jour', 'Les informations de cet enfant ont été corrigées depuis l\'impression de ce bracelet. N\'utilisez pas les numéros qu\'il contient : appelez l\'administration Sèmè Kids.');
     if (res.status === 'revoked') return bad('Bracelet désactivé', 'Ce bracelet a été déclaré perdu ou volé. Appelez l\'administration Sèmè Kids.');
     if (res.status === 'expired') return bad('Bracelet expiré', 'Les données de cet événement ont été effacées. Si un enfant est perdu, appelez l\'administration.');

@@ -78,6 +78,10 @@ def api_verify(request):
     out = {"status": status, "checked_at": timezone.localtime().strftime("%d/%m/%Y à %H:%M")}
     if status == ScanLog.VALID:
         out["event"] = reg.event.title
+        # Les anciens bracelets (QR version 1) ne contiennent pas le nom du chargé : le serveur le
+        # complète, uniquement pour qui présente le bracelet authentique et à jour.
+        if reg.charge_name and not (decoded.data or {}).get("charge_name"):
+            out["charge_name"] = reg.charge_name
     return JsonResponse(out)
 
 

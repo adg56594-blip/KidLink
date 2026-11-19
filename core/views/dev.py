@@ -235,7 +235,8 @@ FIELD_LABELS = {"nom": "nom", "prenom": "prénom", "parent_name": "parent", "par
 def registration_edit(request, pk):
     """Corriger une fiche en toute sécurité : mot de passe + code, QR re-signé (même référence),
     ancien bracelet signalé « plus à jour », bracelet marqué « à réimprimer », journal."""
-    from ..qr import build_fragment
+    from ..qr import VERSION as QR_VERSION
+    from ..qr import build_fragment, verify_fragment
 
     reg = get_object_or_404(Registration.objects.select_related("event", "link"), pk=pk, event__purged_at__isnull=True)
     initial = {f: getattr(reg, f) for f in CHILD_FIELDS}
@@ -249,6 +250,10 @@ def registration_edit(request, pk):
             d = {f: form.cleaned_data.get(f, "") or "" for f in CHILD_FIELDS}
             d["nom"] = d["nom"].upper()
             changed = [f for f in CHILD_FIELDS if (getattr(reg, f) or "") != d[f]]
+            current = verify_fragment(reg.public_id, reg.qr_fragment)
+            old_format = not current.ok or current.payload.split("|", 1)[0] != QR_VERSION
+            if old_format and not changed:
+                changed = ["format"]  # ancien QR (sans nom du chargé) : on le refait au nouveau format
             if not changed:
                 messages.info(request, "Aucune modification.")
                 return redirect("dev:link_detail", pk=reg.link_id)
@@ -259,7 +264,7 @@ def registration_edit(request, pk):
             reg.edit_count += 1
             reg.reprint_needed = True
             reg.save()
-            audit(request, "registration_edited", f"{reg.ref_display or reg.pk} · " + ", ".join(FIELD_LABELS[f] for f in changed))
+            audit(request, "registration_edited", f"{reg.ref_display or reg.pk} · " + ", ".join(FIELD_LABELS.get(f, f) for f in changed))
             messages.success(request, f"Fiche de {reg.full_name} corrigée. Le bracelet doit être réimprimé : l'ancien affichera « plus à jour ».")
             return redirect("dev:link_detail", pk=reg.link_id)
     return render(request, "dev/registration_edit.html", ctx("links", reg=reg, form=form))
