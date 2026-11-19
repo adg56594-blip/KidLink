@@ -9,7 +9,7 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
 from ..forms import ChangePasswordForm, LoginForm, OTPForm, SetPasswordForm
@@ -22,6 +22,7 @@ def _home_for(user):
     return "/dev/" if user.is_developer else "/espace/"
 
 
+@require_http_methods(["GET", "POST"])
 def login_view(request):
     if request.user.is_authenticated and request.session.get("otp_ok"):
         return redirect(_home_for(request.user))
@@ -29,14 +30,20 @@ def login_view(request):
     if request.method == "POST":
         ip = client_ip(request)
         email = (request.POST.get("email") or "").lower()[:254]
-        if rate_limited(f"login-ip:{ip}", 20, 900) or rate_limited(f"login-acc:{email}", 5, 900):
+        # 5 essais par (compte, IP) et 30 par compte toutes IP confondues : un inconnu ne peut
+        # ni deviner un mot de passe, ni bloquer longtemps le vrai administrateur depuis une autre IP.
+        if (
+            rate_limited(f"login-ip:{ip}", 20, 900)
+            or rate_limited(f"login-acc-ip:{email}:{ip}", 5, 900)
+            or rate_limited(f"login-acc:{email}", 30, 900)
+        ):
             audit(request, "login_throttled", email)
             messages.error(request, "Trop de tentatives. Réessayez dans 15 minutes.")
             return render(request, "auth/login.html", {"form": form}, status=429)
         if form.is_valid():
             user = authenticate(request, email=form.cleaned_data["email"].lower(), password=form.cleaned_data["password"])
             if user is not None and user.is_active:
-                reset_rate(f"login-acc:{email}")
+                reset_rate(f"login-acc-ip:{email}:{ip}")
                 login(request, user)  # régénère l'identifiant de session
                 request.session["otp_ok"] = False
                 if two_factor_paused_until():
@@ -68,6 +75,7 @@ def crypto_eq(a, b):
     return hmac.compare_digest(str(a), str(b))
 
 
+@require_http_methods(["GET", "POST"])
 def otp_view(request):
     user = request.user
     if not user.is_authenticated:
@@ -124,6 +132,7 @@ def logout_view(request):
     return redirect("public:home")
 
 
+@require_http_methods(["GET", "POST"])
 def accept_invitation(request, token):
     ip = client_ip(request)
     if rate_limited(f"invite:{ip}", 20, 600):
@@ -174,6 +183,7 @@ def accept_invitation(request, token):
     return render(request, tpl, {"form": form, "inv": inv})
 
 
+@require_http_methods(["GET", "POST"])
 def change_password(request):
     form = ChangePasswordForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():

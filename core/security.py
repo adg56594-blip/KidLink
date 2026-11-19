@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from django.contrib.auth import logout
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import redirect
 
 CSP = "; ".join(
@@ -26,6 +27,7 @@ CSP = "; ".join(
     ]
 )
 
+ALLOWED_METHODS = {"GET", "HEAD", "POST"}  # TRACE, PUT, DELETE, OPTIONS… : refusés partout
 STAFF_PREFIXES = ("/espace/", "/dev/")
 PRIVATE_PREFIXES = STAFF_PREFIXES + ("/i/", "/connexion", "/invitation/", "/inscription-administrateur/")
 
@@ -60,7 +62,10 @@ class SecurityHeadersMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        response = self.get_response(request)
+        if request.method not in ALLOWED_METHODS:
+            response = HttpResponseNotAllowed(sorted(ALLOWED_METHODS))
+        else:
+            response = self.get_response(request)
         response.setdefault("Content-Security-Policy", CSP)
         response.setdefault("Permissions-Policy", "camera=(self), geolocation=(self), microphone=(), payment=(), usb=()")
         response.setdefault("Cross-Origin-Resource-Policy", "same-origin")

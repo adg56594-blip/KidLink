@@ -169,3 +169,19 @@ def test_service_worker_assets_all_exist(client):
 def test_healthz_ok_when_database_is_migrated(client):
     r = client.get("/healthz/")
     assert r.status_code == 200 and r.content == b"ok"
+
+
+@pytest.mark.parametrize("method", ["TRACE", "PUT", "DELETE", "PATCH", "OPTIONS"])
+def test_unusual_http_methods_refused(client, method):
+    for url in ["/", "/connexion/", "/espace/", "/api/verify/"]:
+        assert client.generic(method, url).status_code == 405
+
+
+def test_500_page_works_without_database(rf):
+    from unittest import mock
+
+    from core.views.errors import server_error
+
+    with mock.patch("core.models.SiteSettings.get", side_effect=RuntimeError("base indisponible")):
+        r = server_error(rf.get("/"))
+    assert r.status_code == 500 and "Un problème est survenu" in r.content.decode()

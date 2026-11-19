@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
 from ..forms import DeliveryForm, InviteForm, RolesForm, SettingsForm
@@ -62,6 +62,7 @@ def deliveries(request):
 
 
 @role_required("deliveries")
+@require_http_methods(["GET", "POST"])
 def delivery_edit(request, pk):
     link = get_object_or_404(RegistrationLink.objects.select_related("event"), pk=pk, event__purged_at__isnull=True)
     initial = {
@@ -166,6 +167,7 @@ def account_action(request, pk):
 
 # ------------------------------------------------------------------ équipe développeurs
 @lead_dev_required
+@require_http_methods(["GET", "POST"])
 def team(request):
     members = User.objects.filter(kind=User.DEVELOPER, is_principal=False).order_by("full_name")
     invites = Invitation.objects.filter(kind=Invitation.SUB_DEV, used_at__isnull=True, revoked=False, expires_at__gt=timezone.now())
@@ -189,6 +191,7 @@ def team(request):
 
 
 @lead_dev_required
+@require_http_methods(["GET", "POST"])
 def team_member(request, pk):
     member = get_object_or_404(User, pk=pk, kind=User.DEVELOPER, is_principal=False)
     form = RolesForm(request.POST or None, role_choices=DEV_ASSIGNABLE, initial={"roles": member.roles})
@@ -228,6 +231,7 @@ def audit_log(request):
 
 
 @role_required("settings")
+@require_http_methods(["GET", "POST"])
 def site_settings(request):
     s = SiteSettings.get()
     form = SettingsForm(request.POST or None, instance=s)

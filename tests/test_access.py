@@ -30,7 +30,9 @@ def test_wrong_password_and_lockout(client, admin):
     for _ in range(5):
         client.post("/connexion/", {"email": admin.email, "password": "mauvais"})
     r = client.post("/connexion/", {"email": admin.email, "password": PWD})
-    assert r.status_code == 429  # compte verrouillé 15 min, même avec le bon mot de passe
+    assert r.status_code == 429  # bloqué 15 min depuis cette IP, même avec le bon mot de passe
+    other_ip = Client(REMOTE_ADDR="10.9.9.9").post("/connexion/", {"email": admin.email, "password": PWD})
+    assert other_ip.status_code == 302  # le vrai administrateur, ailleurs, n'est pas bloqué
     assert AuditLog.objects.filter(action="login_failed").count() == 5
 
 

@@ -10,7 +10,12 @@ def not_found(request, exception=None):
 
 
 def server_error(request):
-    return render(request, "public/error.html", {"code": 500, "title": "Erreur", "text": "Un problème est survenu. Réessayez dans un instant."}, status=500)
+    """Ne dépend PAS de la base de données : doit fonctionner même si elle est indisponible."""
+    from django.http import HttpResponseServerError
+    from django.template import loader
+
+    html = loader.get_template("public/error500.html").render({})
+    return HttpResponseServerError(html)
 
 
 def csrf_failure(request, reason=""):

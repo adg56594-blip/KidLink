@@ -105,6 +105,7 @@ if env("DATABASE_URL"):
             "HOST": _u.hostname,
             "PORT": str(_u.port or 5432),
             "CONN_MAX_AGE": 60,
+            "CONN_HEALTH_CHECKS": True,  # reconnexion automatique après une coupure de la base
         }
     }
 elif env("POSTGRES_DB"):
@@ -117,6 +118,7 @@ elif env("POSTGRES_DB"):
             "HOST": env("POSTGRES_HOST", "localhost"),
             "PORT": env("POSTGRES_PORT", "5432"),
             "CONN_MAX_AGE": 60,
+            "CONN_HEALTH_CHECKS": True,  # reconnexion automatique après une coupure de la base
             "OPTIONS": {"sslmode": env("POSTGRES_SSLMODE", "prefer")},
         }
     }
@@ -128,6 +130,9 @@ else:
 
 if env("REDIS_URL"):
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": env("REDIS_URL")}}
+elif not DEV_MODE:
+    # Compteurs anti-abus partagés entre tous les processus et conservés aux redémarrages.
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": "kidlink_cache"}}
 else:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "kidlink"}}
 

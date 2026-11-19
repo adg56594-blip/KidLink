@@ -16,6 +16,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         call_command("migrate", interactive=False, verbosity=1)
+        call_command("createcachetable", verbosity=0)
         if User.objects.filter(kind=User.DEVELOPER, is_principal=True).exists():
             self.stdout.write("Développeur principal déjà présent : aucun lien d'activation créé.")
             return

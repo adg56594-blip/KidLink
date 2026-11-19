@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.text import slugify
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
 from ..forms import EventForm, InviteForm, LinkForm, PurgeForm, RolesForm, link_expiry
@@ -56,6 +56,7 @@ def events(request):
 
 
 @role_required("events")
+@require_http_methods(["GET", "POST"])
 def event_edit(request, pk=None):
     ev = get_object_or_404(Event, pk=pk, purged_at__isnull=True) if pk else None
     form = EventForm(request.POST or None, instance=ev)
@@ -71,6 +72,7 @@ def event_edit(request, pk=None):
 
 
 @role_required("purge")
+@require_http_methods(["GET", "POST"])
 def event_purge(request, pk):
     ev = get_object_or_404(Event, pk=pk, purged_at__isnull=True)
     allowed = ev.retention_over or request.user.is_lead_dev
@@ -111,6 +113,7 @@ def links(request):
 
 
 @role_required("links")
+@require_http_methods(["GET", "POST"])
 def link_create(request):
     form = LinkForm(request.POST or None)
     if not form.fields["event"].queryset.exists():
@@ -223,6 +226,7 @@ def document_download(request, pk):
 
 # ------------------------------------------------------------------ équipe (admin principal)
 @principal_admin_required
+@require_http_methods(["GET", "POST"])
 def team(request):
     members = User.objects.filter(kind=User.ADMIN, is_principal=False).order_by("full_name")
     invites = Invitation.objects.filter(kind=Invitation.SUB_ADMIN, used_at__isnull=True, revoked=False, expires_at__gt=timezone.now())
@@ -250,6 +254,7 @@ def team(request):
 
 
 @principal_admin_required
+@require_http_methods(["GET", "POST"])
 def team_member(request, pk):
     member = get_object_or_404(User, pk=pk, kind=User.ADMIN, is_principal=False)
     form = RolesForm(request.POST or None, role_choices=ADMIN_ROLES, initial={"roles": member.roles})

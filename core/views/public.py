@@ -10,7 +10,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 
 from .. import crypto
 from ..forms import ChildForm
@@ -95,6 +95,7 @@ def _get_link(request, token):
     return link
 
 
+@require_http_methods(["GET", "POST"])
 def link_form(request, token):
     link = _get_link(request, token)
     event = link.event
