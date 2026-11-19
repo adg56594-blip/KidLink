@@ -95,7 +95,8 @@ def test_every_dev_url_checks_rights_for_admin(client, admin, registration):
     from django.urls import get_resolver
 
     staff_client(client, admin)
-    ok = {"dev:links", "dev:link_new", "dev:link_detail", "dev:account", "dev:link_toggle", "dev:link_regenerate", "dev:registration_revoke"}
+    ok = {"dev:links", "dev:link_new", "dev:link_detail", "dev:account", "dev:link_toggle", "dev:link_regenerate", "dev:registration_revoke",
+          "dev:registration_edit"}
     resolver = get_resolver()
     names = [k for k in resolver.reverse_dict.keys() if isinstance(k, str)]
     dev_ns = resolver.namespace_dict["dev"][1]
@@ -517,3 +518,58 @@ def test_only_lead_dev_can_delete_admin(admin, lead_dev):
     c = Client()
     staff_client(c, lead_dev)
     assert c.get(f"/dev/administrateur/{lead_dev.pk}/supprimer/").status_code == 404  # pas un administrateur
+
+
+EDIT = {"nom": "Hounsou", "prenom": "Marie-Claire", "parent_name": "Rosine Hounsou", "parent_phone": "01 96 11 22 33",
+        "parent_phone2": "", "paroisse": "Paroisse Akpakpa", "charge_name": "", "charge_phone": ""}
+
+
+def test_edit_registration_securely(client, lead_dev, registration):
+    import json
+
+    from core.qr import verify_fragment
+
+    old_frag, ref = registration.qr_fragment, registration.ref_display
+    url = f"/dev/enfants/{registration.pk}/modifier/"
+    staff_client(client, lead_dev)
+    assert client.get(url).status_code == 200
+    # sans mot de passe / mauvais code : refusé
+    client.post(url, EDIT)
+    client.post(url, {**EDIT, "password": PWD, "code": "000000"})
+    registration.refresh_from_db()
+    assert registration.prenom == "Marie" and registration.qr_fragment == old_frag
+    r = client.post(url, {**EDIT, "password": PWD, "code": fresh_code(lead_dev)})
+    assert r.status_code == 302
+    registration.refresh_from_db()
+    assert registration.prenom == "Marie-Claire" and registration.parent_phone == "+2290196112233"
+    assert registration.reprint_needed and registration.edit_count == 1 and registration.ref_display == ref
+    d = verify_fragment(registration.public_id, registration.qr_fragment).data
+    assert d["prenom"] == "Marie-Claire" and d["parent_phone"] == "+2290196112233" and d["ref"] == ref
+    # l'ancien bracelet imprimé : « plus à jour », plus l'actuel : authentique
+    v = lambda f: client.post("/api/verify/", data=json.dumps({"id": registration.public_id, "f": f}), content_type="application/json").json()["status"]
+    assert v(old_frag) == "replaced" and v(registration.qr_fragment) == "valid"
+    log = AuditLog.objects.get(action="registration_edited")
+    assert "prénom" in log.detail and "numéro des parents" in log.detail and "Marie" not in log.detail  # pas de données personnelles
+    # PDF des seuls bracelets corrigés, puis le marqueur disparaît
+    r = client.get(f"/dev/liens/{registration.link_id}/pdf/?corriges=1")
+    assert r.status_code == 200 and "corriges" in r["Content-Disposition"]
+    registration.refresh_from_db()
+    assert not registration.reprint_needed
+
+
+def test_admin_can_correct_but_never_sees_qr(client, admin, registration):
+    staff_client(client, admin)
+    url = f"/dev/enfants/{registration.pk}/modifier/"
+    page = client.get(url).content.decode()
+    assert page and registration.qr_fragment not in page and registration.public_id not in page
+    r = client.post(url, {**EDIT, "password": PWD, "code": fresh_code(admin)})
+    assert r.status_code == 302
+    registration.refresh_from_db()
+    assert registration.prenom == "Marie-Claire"
+    assert client.get(f"/dev/liens/{registration.link_id}/pdf/?corriges=1").status_code == 403
+
+
+def test_edit_forbidden_without_registrations_role(client, lead_dev, registration):
+    sub = make_user("links3@t.bj", User.DEVELOPER, roles=["links"])
+    staff_client(client, sub)
+    assert client.get(f"/dev/enfants/{registration.pk}/modifier/").status_code == 403

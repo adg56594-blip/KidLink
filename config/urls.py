@@ -41,6 +41,7 @@ dev_patterns = [
     path("liens/<int:pk>/regenerer/", dev.link_regenerate, name="link_regenerate"),
     path("liens/<int:pk>/pdf/", dev.pdf_download, name="pdf"),
     path("enfants/<int:pk>/bracelet/", dev.registration_revoke, name="registration_revoke"),
+    path("enfants/<int:pk>/modifier/", dev.registration_edit, name="registration_edit"),
     path("bracelets/", dev.bracelets, name="bracelets"),
     path("administrateur/", dev.accounts, name="accounts"),
     path("administrateur/inscription/", dev.principal_invite, name="principal_invite"),

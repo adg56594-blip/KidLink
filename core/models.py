@@ -282,6 +282,10 @@ class Registration(models.Model):
     qr_fragment = EncryptedTextField()
     created_at = models.DateTimeField(auto_now_add=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
+    # Corrections : le QR est re-signé ; l'ancien bracelet imprimé n'est plus à jour.
+    updated_at = models.DateTimeField(null=True, blank=True)
+    edit_count = models.PositiveIntegerField(default=0)
+    reprint_needed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["created_at"]
@@ -301,8 +305,9 @@ class Registration(models.Model):
 
 
 class ScanLog(models.Model):
-    VALID, REVOKED, EXPIRED, FORGED, UNKNOWN = "valid", "revoked", "expired", "forged", "unknown"
-    RESULTS = [(VALID, "Authentique"), (REVOKED, "Désactivé"), (EXPIRED, "Expiré"), (FORGED, "Falsifié"), (UNKNOWN, "Inconnu")]
+    VALID, REVOKED, EXPIRED, FORGED, UNKNOWN, REPLACED = "valid", "revoked", "expired", "forged", "unknown", "replaced"
+    RESULTS = [(VALID, "Authentique"), (REVOKED, "Désactivé"), (EXPIRED, "Expiré"), (FORGED, "Falsifié"), (UNKNOWN, "Inconnu"),
+               (REPLACED, "Ancienne version (fiche corrigée)")]
     registration = models.ForeignKey(Registration, null=True, blank=True, on_delete=models.CASCADE, related_name="scans")
     result = models.CharField(max_length=10, choices=RESULTS)
     ip_hash = models.CharField(max_length=16)

@@ -57,7 +57,7 @@
   <div class="panel-head"><h2>Enfants inscrits ({{ regs|length }})</h2></div>
   {% if regs %}
   <table class="table rtable">
-    <thead><tr><th>Enfant</th><th>Paroisse</th><th>Parent</th><th>Inscrit le</th><th>Bracelet</th></tr></thead>
+    <thead><tr><th>Enfant</th><th>Paroisse</th><th>Parent</th><th>Inscrit le</th><th>Actions</th></tr></thead>
     <tbody>
     {% for r in regs %}
       <tr{% if r.revoked_at %} class="is-off"{% endif %}>
@@ -65,11 +65,12 @@
         <td data-label="Paroisse">{{ r.paroisse }}</td>
         <td data-label="Parent">{{ r.parent_name }}<small>{{ r.parent_phone|phone }}</small></td>
         <td data-label="Inscrit le">{{ r.created_at|date:"j M H:i" }}</td>
-        <td data-label="Bracelet">
+        <td data-label="Actions"><div class="row-actions">
+          <a class="btn btn-light btn-sm" href="{% url 'dev:registration_edit' r.pk %}"><svg class="ic"><use href="#i-form"/></svg> Modifier</a>
           <form method="post" action="{% url 'dev:registration_revoke' r.pk %}" data-confirm="{% if r.revoked_at %}Réactiver ce bracelet ?{% else %}Désactiver ce bracelet (perdu ou volé) ?{% endif %}">{% csrf_token %}
             <button class="btn btn-sm {% if r.revoked_at %}btn-light{% else %}btn-danger-soft{% endif %}" type="submit">{% if r.revoked_at %}Réactiver{% else %}Désactiver{% endif %}</button>
           </form>
-        </td>
+        </div>{% if r.reprint_needed %}<span class="pill pill-expire">{% if can.documents %}À réimprimer{% else %}Corrigée{% endif %}</span>{% elif r.edit_count %}<span class="pill">Corrigée</span>{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>

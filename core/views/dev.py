@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
-from ..forms import DeleteAccountForm, EventForm, InviteForm, LinkForm, PurgeForm, ResetDataForm, RolesForm, SettingsForm, link_expiry
+from ..forms import DeleteAccountForm, EditChildForm, EventForm, InviteForm, LinkForm, PurgeForm, ResetDataForm, RolesForm, SettingsForm, link_expiry
 from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, User
 from ..roles import DEV_ROLES, clean_roles
 from ..security import developer_required, lead_dev_required, role_required, two_factor_paused_until
@@ -225,6 +225,46 @@ def link_regenerate(request, pk):
     return redirect("dev:link_detail", pk=pk)
 
 
+CHILD_FIELDS = ["nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_name", "charge_phone"]
+FIELD_LABELS = {"nom": "nom", "prenom": "prénom", "parent_name": "parent", "parent_phone": "numéro des parents", "parent_phone2": "2e numéro",
+                "paroisse": "paroisse", "charge_name": "chargé", "charge_phone": "numéro du chargé"}
+
+
+@role_required("registrations")
+@require_http_methods(["GET", "POST"])
+def registration_edit(request, pk):
+    """Corriger une fiche en toute sécurité : mot de passe + code, QR re-signé (même référence),
+    ancien bracelet signalé « plus à jour », bracelet marqué « à réimprimer », journal."""
+    from ..qr import build_fragment
+
+    reg = get_object_or_404(Registration.objects.select_related("event", "link"), pk=pk, event__purged_at__isnull=True)
+    initial = {f: getattr(reg, f) for f in CHILD_FIELDS}
+    form = EditChildForm(request.POST or None, user=request.user, initial=initial)
+    if request.method == "POST":
+        if _reauth_blocked(request):
+            return redirect("auth:login")
+        if not form.is_valid():
+            _reauth_failed(request)
+        else:
+            d = {f: form.cleaned_data.get(f, "") or "" for f in CHILD_FIELDS}
+            d["nom"] = d["nom"].upper()
+            changed = [f for f in CHILD_FIELDS if (getattr(reg, f) or "") != d[f]]
+            if not changed:
+                messages.info(request, "Aucune modification.")
+                return redirect("dev:link_detail", pk=reg.link_id)
+            for f in CHILD_FIELDS:
+                setattr(reg, f, d[f])
+            reg.qr_fragment = build_fragment(reg.public_id, reg.event.retention_until, {**d, "ref": reg.ref_display})
+            reg.updated_at = timezone.now()
+            reg.edit_count += 1
+            reg.reprint_needed = True
+            reg.save()
+            audit(request, "registration_edited", f"{reg.ref_display or reg.pk} · " + ", ".join(FIELD_LABELS[f] for f in changed))
+            messages.success(request, f"Fiche de {reg.full_name} corrigée. Le bracelet doit être réimprimé : l'ancien affichera « plus à jour ».")
+            return redirect("dev:link_detail", pk=reg.link_id)
+    return render(request, "dev/registration_edit.html", ctx("links", reg=reg, form=form))
+
+
 @role_required("registrations")
 @require_POST
 def registration_revoke(request, pk):
@@ -239,14 +279,16 @@ def registration_revoke(request, pk):
 # ================================================================== bracelets (PDF)
 @role_required("documents")
 def bracelets(request):
-    rows = live_links().select_related("event").annotate(n=Count("registrations")).filter(n__gt=0)
+    rows = (live_links().select_related("event")
+            .annotate(n=Count("registrations"), reprints=Count("registrations", filter=Q(registrations__reprint_needed=True)))
+            .filter(n__gt=0))
     return render(request, "dev/bracelets.html", ctx("bracelets", rows=rows))
 
 
 @role_required("documents")
 def pdf_download(request, pk):
     link = get_object_or_404(live_links().select_related("event"), pk=pk)
-    return pdf_response(link, request)
+    return pdf_response(link, request, only_reprints=request.GET.get("corriges") == "1")
 
 
 # ================================================================== compte de l'administrateur

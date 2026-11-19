@@ -30,14 +30,20 @@ def purge_event(ev, user=None):
     return n
 
 
-def pdf_response(link, request):
+def pdf_response(link, request, only_reprints=False):
     regs = link.registrations.filter(revoked_at__isnull=True)
+    if only_reprints:
+        regs = regs.filter(reprint_needed=True)
     data = build_pdf(regs, title=link.event.title, subtitle=link.label, bracelet_line=SiteSettings.get().bracelet_line)
     resp = HttpResponse(data, content_type="application/pdf")
     name = slugify(f"bracelets-{link.event.title}-{link.label}")[:80] or "bracelets"
     resp["Content-Disposition"] = f'attachment; filename="{name}.pdf"'
     resp["Cache-Control"] = "no-store, private"
-    audit(request, "pdf_downloaded", f"{link.pk} · {regs.count()} bracelet(s)")
+    count = regs.count()
+    if only_reprints:
+        resp["Content-Disposition"] = f'attachment; filename="{name}-corriges.pdf"'
+        regs.update(reprint_needed=False)  # remis à l'imprimeur
+    audit(request, "pdf_downloaded", f"{link.pk} · {count} bracelet(s){' corrigé(s)' if only_reprints else ''}")
     return resp
 
 

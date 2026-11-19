@@ -65,7 +65,9 @@ def api_verify(request):
     elif reg is None:
         status = ScanLog.EXPIRED  # signature authentique mais données effacées après l'événement
     elif reg.qr_fragment != fragment:
-        status = ScanLog.FORGED
+        # Signature authentique mais contenu différent de la fiche actuelle : c'est un ancien
+        # bracelet dont la fiche a été corrigée (le serveur est le seul à pouvoir signer).
+        status = ScanLog.REPLACED
     elif reg.revoked_at:
         status = ScanLog.REVOKED
     elif reg.event.retention_over:

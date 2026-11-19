@@ -347,6 +347,16 @@ class ChildForm(forms.Form):
         return d
 
 
+class EditChildForm(ReauthForm, ChildForm):
+    """Correction d'une fiche : mêmes champs que l'inscription + mot de passe et code."""
+
+    field_order = ["nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_name", "charge_phone", "password", "code"]
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        del self.fields["confirm_duplicate"]
+
+
 # ------------------------------------------------------------------ développeurs
 class DateTimeInput(forms.DateTimeInput):
     input_type = "datetime-local"

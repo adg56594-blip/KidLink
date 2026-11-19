@@ -1,0 +1,44 @@
+{% extends "dev/base.html" %}
+{% block title %}Corriger une fiche{% endblock %}
+{% block crumb %}{{ reg.link.label }} · {{ reg.event.title }}{% endblock %}
+{% block page_title %}Corriger la fiche de {{ reg.full_name }}{% endblock %}
+{% block content %}
+<div class="guide-note"><svg class="ic"><use href="#i-shield"/></svg><p><b>Correction sécurisée.</b> Le QR code de l'enfant contient ces informations : après la correction, il est re-signé (même référence {{ reg.ref_display|default:"" }}). {% if can.documents %}Le bracelet passe en « À réimprimer » ; l'ancien bracelet affichera « plus à jour ».{% else %}Les développeurs réimprimeront le bracelet ; l'ancien affichera « plus à jour ».{% endif %} Votre mot de passe et votre code sont demandés pour qu'un pirate ne puisse pas changer le numéro des parents.</p></div>
+<form method="post" class="panel form-panel" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="warn-box" role="alert"><svg class="ic"><use href="#i-alert"/></svg><div>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div></div>{% endif %}
+  <div class="form-section">
+    <h2><span class="num">1</span> L'enfant</h2>
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.nom %}
+      {% include "partials/field.html" with field=form.prenom %}
+    </div>
+  </div>
+  <div class="form-section">
+    <h2><span class="num">2</span> Qui appeler ?</h2>
+    {% include "partials/field.html" with field=form.parent_name %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.parent_phone %}
+      {% include "partials/field.html" with field=form.parent_phone2 %}
+    </div>
+  </div>
+  <div class="form-section">
+    <h2><span class="num">3</span> La paroisse</h2>
+    {% include "partials/field.html" with field=form.paroisse %}
+    <div class="grid2">
+      {% include "partials/field.html" with field=form.charge_name %}
+      {% include "partials/field.html" with field=form.charge_phone %}
+    </div>
+  </div>
+  <div class="form-section">
+    <h2><span class="num">4</span> Prouvez que c'est bien vous</h2>
+    {% include "partials/field.html" with field=form.password %}
+    {% if form.code %}{% include "partials/field.html" with field=form.code %}{% endif %}
+    <p class="help">3 essais ratés = déconnexion. La correction est inscrite au journal de sécurité.</p>
+  </div>
+  <div class="form-actions sticky-actions">
+    <a class="btn btn-light" href="{% url 'dev:link_detail' reg.link_id %}">Annuler</a>
+    <button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-check"/></svg> Enregistrer la correction</button>
+  </div>
+</form>
+{% endblock %}

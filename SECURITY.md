@@ -80,7 +80,7 @@ Contrôles complémentaires :
 | Mots de passe | Argon2id |
 | Liens d'inscription, invitations | seule une empreinte HMAC-SHA256 est stockée |
 | Secrets 2FA | chiffrés en base |
-| `pytest` (88 tests unitaires et d'intégration) | 88 réussis |
+| `pytest` (91 tests unitaires et d'intégration) | 91 réussis |
 | `bandit` (analyse statique Python) | 0 problème |
 | `pip-audit` (vulnérabilités connues des dépendances) | 0 vulnérabilité |
 | `manage.py check --deploy` | 0 avertissement |
@@ -109,6 +109,13 @@ Contrôles complémentaires :
   est refusé. **3 échecs en 15 minutes = déconnexion** et blocage ; chaque tentative est journalisée.
 - Effet : un pirate qui aurait volé une session ouverte (sans le mot de passe ni le téléphone)
   ne peut rien effacer.
+
+## Correction d'une fiche
+
+Le numéro des parents étant signé dans le QR code, une correction pourrait servir à détourner les
+appels : elle exige donc mot de passe + code (3 échecs = déconnexion), elle est journalisée (champs
+modifiés, sans les valeurs), le QR est re-signé avec la même référence, et l'ancien bracelet imprimé
+est signalé « plus à jour » (statut distinct de « falsifié ») au lieu d'afficher les anciens numéros.
 
 ## Mot de passe oublié
 
