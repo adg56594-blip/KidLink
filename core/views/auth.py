@@ -12,7 +12,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
-from ..forms import ChangePasswordForm, LoginForm, OTPForm, SetPasswordForm
+from ..forms import ChangePasswordForm, LoginForm, OTPForm, ProfileForm, SetPasswordForm
 from ..models import Invitation, User
 from ..security import two_factor_paused_until
 from ..utils import audit, client_ip, rate_limited, reset_rate
@@ -46,8 +46,10 @@ def login_view(request):
                 reset_rate(f"login-acc-ip:{email}:{ip}")
                 login(request, user)  # régénère l'identifiant de session
                 request.session["otp_ok"] = False
+                request.session["remember"] = bool(form.cleaned_data.get("remember"))
                 if two_factor_paused_until():
                     request.session["otp_ok"] = True
+                    apply_remember(request)
                     audit(request, "login_ok_2fa_paused")
                     return redirect(_home_for(user))
                 nxt = request.GET.get("next", "")
@@ -57,6 +59,18 @@ def login_view(request):
             audit(request, "login_failed", email)
             messages.error(request, "Adresse e-mail ou mot de passe incorrect.")
     return render(request, "auth/login.html", {"form": form})
+
+
+REMEMBER_SECONDS = 30 * 24 * 3600
+
+
+def apply_remember(request):
+    """« Rester connecté » : session de 30 jours qui survit à la fermeture du navigateur.
+    Sinon : session fermée avec le navigateur (8 h maximum)."""
+    if request.session.get("remember"):
+        request.session.set_expiry(REMEMBER_SECONDS)
+    else:
+        request.session.set_expiry(0)
 
 
 def _check_totp(user, secret, code):
@@ -84,6 +98,7 @@ def otp_view(request):
         return redirect(_home_for(user))
     if two_factor_paused_until():
         request.session["otp_ok"] = True
+        apply_remember(request)
         audit(request, "login_ok_2fa_paused")
         return redirect(_home_for(user))
     enrolling = not user.totp_confirmed
@@ -111,6 +126,7 @@ def otp_view(request):
                 user.save(update_fields=["totp_secret", "totp_confirmed", "totp_last_step", "last_login"])
                 request.session.cycle_key()
                 request.session["otp_ok"] = True
+                apply_remember(request)
                 reset_rate(f"otp:{user.pk}")
                 audit(request, "login_ok")
                 return redirect(request.session.pop("after_otp", None) or _home_for(user))
@@ -185,6 +201,18 @@ def accept_invitation(request, token):
 
 @require_http_methods(["GET", "POST"])
 def change_password(request):
+    is_profile = request.method == "POST" and request.POST.get("action") == "profile"
+    profile = ProfileForm(request.POST if is_profile else None, initial={"full_name": request.user.full_name, "phone": request.user.phone})
+    if is_profile:
+        if profile.is_valid():
+            request.user.full_name = profile.cleaned_data["full_name"]
+            request.user.phone = profile.cleaned_data["phone"]
+            request.user.save(update_fields=["full_name", "phone"])
+            audit(request, "profile_updated")
+            messages.success(request, "Profil enregistré.")
+            return redirect(request.path)
+        form = ChangePasswordForm(request.user)
+        return render(request, "auth/password.html", {"form": form, "profile": profile, "base": "dev/base.html", "nav": "account"})
     form = ChangePasswordForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         request.user.set_password(form.cleaned_data["password1"])
@@ -193,5 +221,5 @@ def change_password(request):
         audit(request, "password_changed")
         messages.success(request, "Mot de passe modifié.")
         return redirect(request.path)
-    base = "dev/base.html" if request.user.is_developer else "espace/base.html"
-    return render(request, "auth/password.html", {"form": form, "base": base, "nav": "account"})
+    base = "dev/base.html"
+    return render(request, "auth/password.html", {"form": form, "profile": profile, "base": base, "nav": "account"})

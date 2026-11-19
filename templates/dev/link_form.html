@@ -3,7 +3,7 @@
 {% block crumb %}Liens d'inscription{% endblock %}
 {% block page_title %}Nouveau paiement{% endblock %}
 {% block content %}
-<div class="guide-note"><svg class="ic"><use href="#i-cash"/></svg><p><b>À quoi sert cette page ?</b> À utiliser <b>uniquement après un paiement reçu</b>. Le lien permettra d'inscrire <b>exactement</b> le nombre d'enfants payés, ni plus, ni moins. Il n'est montré qu'une fois : envoyez-le aussitôt par WhatsApp.</p></div>
+<div class="guide-note"><svg class="ic"><use href="#i-cash"/></svg><p><b>À quoi sert cette page ?</b> À utiliser <b>uniquement après un paiement reçu</b>. Le lien permettra d'inscrire <b>exactement</b> le nombre d'enfants payés, ni plus, ni moins. Il n'est montré qu'une fois : envoyez-le aussitôt par WhatsApp, ou remplissez vous-même les fiches. Ensuite, les développeurs génèrent les QR codes et préparent les bracelets.</p></div>
 {{ prices|json_script:"prices" }}
 <div class="split">
 <form method="post" class="panel form-panel" novalidate id="link-form">

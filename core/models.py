@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from .fields import EncryptedTextField
-from .roles import DEV_ROLES, GAINS
+from .roles import ADMIN_ROLES, DEV_ROLES, GAINS
 
 CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"  # sans 0/O, 1/I/L, U : lisible à l'oral
 
@@ -84,7 +84,7 @@ class User(AbstractBaseUser):
         if not self.is_active:
             return False
         if self.is_admin:
-            return role == GAINS  # l'administrateur ne fait que regarder les gains
+            return role in ADMIN_ROLES  # jamais les QR codes / PDF
         if self.is_lead_dev or role == GAINS:
             return True
         return role in self.roles  # sous-développeur
@@ -94,7 +94,7 @@ class User(AbstractBaseUser):
         if self.is_lead_dev:
             return ["Tous les droits"]
         if self.is_admin:
-            return ["Voir les gains"]
+            return ["Voir les gains", "Créer et envoyer les liens", "Voir les inscrits"]
         return [DEV_ROLES[r] for r in self.roles if r in DEV_ROLES]
 
     @property

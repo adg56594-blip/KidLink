@@ -2,9 +2,9 @@
 
 - Développeur principal : accès total, nomme les sous-développeurs.
 - Sous-développeur : uniquement les rôles cochés par le développeur principal.
-- Administrateur : NE GÈRE RIEN. Il voit seulement la page « Les gains »
-  (argent encaissé, nombre d'enfants) et contacte les développeurs par WhatsApp.
-  Il ne voit aucune donnée d'enfant, aucun QR code, aucun PDF.
+- Administrateur (le patron) : voit les gains, crée et envoie les liens après paiement,
+  inscrit lui-même des enfants, voit les inscrits. Il n'a JAMAIS accès aux QR codes ni aux
+  PDF : ce sont les développeurs qui génèrent et préparent les bracelets.
 """
 
 DEV_ROLES = {
@@ -18,8 +18,9 @@ DEV_ROLES = {
     "settings": "Modifier les réglages (numéros affichés, texte du bracelet)",
 }
 
-# Le seul « rôle » de l'administrateur : regarder les gains.
 GAINS = "gains"
+# Ce que l'administrateur peut faire (jamais « documents » = QR/PDF).
+ADMIN_ROLES = {GAINS, "links", "registrations"}
 
 
 def clean_roles(values, allowed):

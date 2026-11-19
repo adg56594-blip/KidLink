@@ -73,6 +73,23 @@
     if (!confirm('DERNIÈRE CONFIRMATION\n\nTout effacer définitivement ? Cette action est irréversible.')) e.preventDefault();
   });
 
+  // Installer l'application sur le téléphone (plus besoin de chercher le lien)
+  var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  var installCard = document.querySelector('[data-install-card]');
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    if (installCard && !standalone) installCard.hidden = false;
+  });
+  var ib = document.querySelector('[data-install]');
+  if (ib) ib.addEventListener('click', function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; installCard.hidden = true; });
+  });
+  var ios = document.querySelector('[data-install-ios]');
+  if (ios && !standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) ios.hidden = false;
+
   // Menu mobile
   document.querySelectorAll('[data-toggle-menu]').forEach(function (b) {
     b.addEventListener('click', function () { document.body.classList.toggle('menu-open'); });

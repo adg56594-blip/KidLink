@@ -93,8 +93,7 @@ class StaffAreaMiddleware:
                 return redirect("/connexion/")
             if not request.session.get("otp_ok"):
                 return redirect("auth:otp")
-            if path.startswith("/dev/") and not user.is_developer:
-                raise PermissionDenied
+            # /dev/ : chaque vue vérifie elle-même les droits (role_required, developer_required…).
         return self.get_response(request)
 
 
@@ -111,6 +110,16 @@ def role_required(*roles):
         return wrapped
 
     return deco
+
+
+def developer_required(view):
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_developer:
+            raise PermissionDenied
+        return view(request, *args, **kwargs)
+
+    return wrapped
 
 
 def lead_dev_required(view):

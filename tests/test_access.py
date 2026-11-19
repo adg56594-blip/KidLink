@@ -61,21 +61,55 @@ def test_open_redirect_blocked(client, admin):
     assert "after_otp" not in client.session
 
 
-def test_admin_only_sees_gains(client, admin, registration):
-    """L'administrateur ne gère rien : uniquement la page « Les gains »."""
+def test_admin_rights_without_qr_codes(client, admin, registration):
+    """L'administrateur : gains + liens + inscrits. JAMAIS de QR code ni de PDF."""
     staff_client(client, admin)
-    page = client.get("/espace/")
-    assert page.status_code == 200
-    body = page.content.decode()
-    assert "Argent encaissé" in body and "3 000 F" in body
-    # Aucune donnée d'enfant, de famille, de QR ou de lien
-    for secret in ["HOUNSOU", "Rosine", "Famille Test", "Payeur", registration.public_id, registration.qr_fragment]:
-        assert secret not in body, secret
     link = registration.link
-    for url in DEV + [f"/dev/liens/{link.pk}/", f"/dev/liens/{link.pk}/pdf/", f"/dev/pelerinages/{link.event_id}/vider/"]:
+    allowed = ["/espace/", "/espace/compte/", "/dev/compte/", "/dev/liens/", "/dev/liens/nouveau/", f"/dev/liens/{link.pk}/"]
+    for url in allowed:
+        assert client.get(url).status_code == 200, url
+    pages = "".join(client.get(u).content.decode() for u in allowed)
+    for secret in [registration.public_id, registration.qr_fragment, "/pdf/"]:
+        assert secret not in pages, secret
+    assert "HOUNSOU" in client.get(f"/dev/liens/{link.pk}/").content.decode()  # il voit les inscrits
+    assert "développeurs génèrent les QR codes" in client.get(f"/dev/liens/{link.pk}/").content.decode()
+    forbidden = ["/dev/", "/dev/pelerinages/", "/dev/pelerinages/nouveau/", f"/dev/pelerinages/{link.event_id}/vider/", "/dev/bracelets/",
+                 f"/dev/liens/{link.pk}/pdf/", "/dev/administrateur/", "/dev/equipe/", "/dev/journal/", "/dev/reglages/", "/dev/vider-donnees-de-test/"]
+    for url in forbidden:
         assert client.get(url).status_code == 403, url
-    for url in [f"/dev/liens/{link.pk}/activer/", f"/dev/enfants/{registration.pk}/bracelet/", "/dev/administrateur/inscription/"]:
+    for url in ["/dev/administrateur/inscription/", "/dev/equipe/", "/dev/vider-donnees-de-test/", f"/dev/pelerinages/{link.event_id}/vider/"]:
         assert client.post(url).status_code == 403, url
+
+
+def test_admin_creates_link_and_can_fill_it_himself(client, admin, event):
+    staff_client(client, admin)
+    r = client.post("/dev/liens/nouveau/", {"event": event.pk, "label": "Famille Patron", "payer_name": "P", "payer_phone": "",
+                                             "amount_received": 2000, "valid_days": 7, "cash_ack": "on", "quota": 2, "quota_confirm": 2})
+    assert r.status_code == 302
+    page = client.get(r["Location"]).content.decode()
+    assert "Remplir moi-même les fiches" in page and "/i/" in page
+
+
+def test_every_dev_url_checks_rights_for_admin(client, admin, registration):
+    """Le préfixe /dev/ n'est plus bloqué en bloc : on vérifie que CHAQUE adresse protège ses données."""
+    from django.urls import get_resolver
+
+    staff_client(client, admin)
+    ok = {"dev:links", "dev:link_new", "dev:link_detail", "dev:account", "dev:link_toggle", "dev:link_regenerate", "dev:registration_revoke"}
+    resolver = get_resolver()
+    names = [k for k in resolver.reverse_dict.keys() if isinstance(k, str)]
+    dev_ns = resolver.namespace_dict["dev"][1]
+    checked = 0
+    for name in [n for n in dev_ns.reverse_dict.keys() if isinstance(n, str)]:
+        if f"dev:{name}" in ok:
+            continue
+        pattern = dev_ns.reverse_dict.getlist(name)[0][0][0][0]
+        url = "/dev/" + pattern.replace("%(pk)s", str(registration.link.pk))
+        for method in ("get", "post"):
+            code = getattr(client, method)(url).status_code
+            assert code in (403, 405), (method, url, code)
+        checked += 1
+    assert checked >= 15 and names is not None
 
 
 def test_admin_has_whatsapp_to_developers(client, admin):
@@ -360,3 +394,38 @@ def test_2fa_pause_is_temporary_and_bounded(client, admin, settings):
         c = Client()
         c.post("/connexion/", {"email": admin.email, "password": PWD})
         assert c.get("/espace/").status_code == 302
+
+
+def test_remember_me_keeps_session_30_days(admin):
+    import time
+
+    import pyotp
+
+    from .conftest import SECRET
+
+    for remember, expected in [(True, 30 * 24 * 3600), (False, 0)]:
+        User.objects.filter(pk=admin.pk).update(totp_last_step=0)
+        c = Client()
+        data = {"email": admin.email, "password": PWD}
+        if remember:
+            data["remember"] = "on"
+        c.post("/connexion/", data)
+        c.post("/connexion/code/", {"code": pyotp.TOTP(SECRET).at(int(time.time()))})
+        assert c.session.get("otp_ok")
+        assert c.session.get_expiry_age() == expected if expected else c.session.get_expire_at_browser_close()
+
+
+def test_gestion_manifest_opens_login(client, db):
+    import json
+
+    r = client.get("/gestion.webmanifest")
+    assert r.status_code == 200 and json.loads(r.content)["start_url"] == "/connexion/"
+
+
+def test_dev_phone_shown_to_admin(client, lead_dev, admin):
+    staff_client(client, lead_dev)
+    client.post("/dev/compte/", {"action": "profile", "full_name": "Modeste Dev", "phone": "01 67 32 43 61"})
+    c = Client()
+    staff_client(c, admin)
+    page = c.get("/espace/").content.decode()
+    assert "Modeste Dev" in page and "wa.me/2290167324361" in page

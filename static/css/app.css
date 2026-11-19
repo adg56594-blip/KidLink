@@ -790,3 +790,14 @@ progress::-moz-progress-bar{background:linear-gradient(90deg,var(--g),#5ad08f);b
 .danger-zone h2{display:flex;gap:8px;align-items:center;font-size:1.1rem;color:#8f0f1b;margin:0 0 4px}
 .danger-zone p{margin:0;color:var(--ink-2);max-width:60ch}
 .side-nav a.side-danger{color:#ffb3bb}
+.install-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px;background:#fff;border:1.5px solid #cddcff;box-shadow:var(--shadow-1)}
+.install-card>div{flex:1}
+.install-card b{display:block}
+.install-card small{display:block;color:var(--muted);font-size:.92rem}
+.team-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.team-list li{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:16px}
+.team-list li>div{flex:1;min-width:0}
+.team-list strong{display:block;font-size:1.05rem}
+.team-list small{color:var(--muted)}
+@media(max-width:400px){.team-list .btn span{display:none}}
+.sub-h{margin-top:28px}

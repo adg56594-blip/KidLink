@@ -5,9 +5,10 @@
 {% block content %}
 {% if url %}
 <section class="newlink">
-  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Le lien est prêt</h2><p>Il ne sera plus affiché après cette page. Envoyez-le maintenant.</p></div></div>
+  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Le lien est prêt</h2><p>Envoyez-le par WhatsApp, <b>ou</b> remplissez vous-même les fiches. Il ne sera plus affiché après cette page.</p></div></div>
   <div class="copy-row"><input id="the-link" readonly value="{{ url }}" aria-label="Lien d'inscription"><button class="btn btn-light" type="button" data-copy="#the-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
   <div class="nl-actions">
+    <a class="btn btn-primary btn-lg" href="{{ url }}" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-form"/></svg> Remplir moi-même les fiches</a>
     <a class="btn btn-wa btn-lg" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ link.payer_phone|digits }}?text={{ share|urlencode }}"><svg class="ic"><use href="#i-wa"/></svg> Envoyer par WhatsApp{% if link.payer_phone %} à {{ link.payer_phone|phone }}{% endif %}</a>
   </div>
 </section>
@@ -38,8 +39,11 @@
   </section>
 
   <aside class="panel">
-    <h2>Bracelets à imprimer</h2>
-    {% if link.used %}
+    <h2>Bracelets</h2>
+    {% if not can.documents %}
+      <p class="ok-line"><svg class="ic"><use href="#i-shield"/></svg> Les développeurs génèrent les QR codes et préparent les bracelets dès que les fiches sont remplies.</p>
+      <p class="muted">{{ link.used }} fiche{{ link.used|pluralize }} remplie{{ link.used|pluralize }} sur {{ link.quota }}.</p>
+    {% elif link.used %}
       <p class="muted">PDF A4, 20 bracelets par page, pour l'imprimeur. Imprimer à 100 %.</p>
       {% if can.documents %}<a class="btn btn-primary btn-block" href="{% url 'dev:pdf' link.pk %}"><svg class="ic"><use href="#i-doc"/></svg> Télécharger le PDF ({{ link.used }})</a>{% endif %}
     {% else %}

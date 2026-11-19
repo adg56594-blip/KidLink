@@ -60,6 +60,7 @@ urlpatterns = [
     path("dev/", include((dev_patterns, "dev"))),
     path("sw.js", public.service_worker, name="sw"),
     path("manifest.webmanifest", public.manifest, name="manifest"),
+    path("gestion.webmanifest", public.manifest_gestion, name="manifest_gestion"),
     path("robots.txt", public.robots),
     path("healthz/", public.healthz),
 ]

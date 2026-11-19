@@ -42,6 +42,8 @@ class PhoneField(forms.CharField):
 class LoginForm(forms.Form):
     email = forms.EmailField(label="Adresse e-mail", widget=forms.EmailInput(attrs={"autocomplete": "username", "autofocus": True}))
     password = forms.CharField(label="Mot de passe", strip=False, widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))
+    remember = forms.BooleanField(label="Rester connecté sur cet appareil (30 jours)", required=False,
+                                  help_text="À cocher seulement sur votre téléphone personnel.")
 
 
 class OTPForm(forms.Form):
@@ -83,6 +85,11 @@ class SetPasswordForm(forms.Form):
             except forms.ValidationError as e:
                 self.add_error("password1", e)
         return d
+
+
+class ProfileForm(forms.Form):
+    full_name = TextField(label="Nom complet (affiché à l'administrateur)", max_length=120)
+    phone = PhoneField(label="Numéro WhatsApp", required=False, help_text="L'administrateur pourra vous écrire en un clic.")
 
 
 class ChangePasswordForm(forms.Form):

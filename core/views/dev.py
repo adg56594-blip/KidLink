@@ -14,7 +14,7 @@ from .. import crypto
 from ..forms import EventForm, InviteForm, LinkForm, PurgeForm, ResetDataForm, RolesForm, SettingsForm, link_expiry
 from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, User
 from ..roles import DEV_ROLES, clean_roles
-from ..security import lead_dev_required, role_required, two_factor_paused_until
+from ..security import developer_required, lead_dev_required, role_required, two_factor_paused_until
 from ..services import pdf_response, purge_event, reset_all_data
 from ..utils import audit, rate_count, rate_limited, reset_rate
 
@@ -28,6 +28,7 @@ def live_links():
 
 
 # ================================================================== tableau de bord
+@developer_required
 def dashboard(request):
     now = timezone.now()
     links = live_links()

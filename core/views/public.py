@@ -185,6 +185,12 @@ def manifest(request):
 
 
 @require_GET
+@cache_control(max_age=3600)
+def manifest_gestion(request):
+    return render(request, "gestion.webmanifest", content_type="application/manifest+json")
+
+
+@require_GET
 def robots(request):
     return HttpResponse("User-agent: *\nDisallow: /\n", content_type="text/plain")
 

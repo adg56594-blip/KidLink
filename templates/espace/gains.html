@@ -1,5 +1,7 @@
-{% extends "espace/base.html" %}{% load kl %}
-{% block title %}Les gains{% endblock %}
+{% extends "dev/base.html" %}{% load kl %}
+{% block title %}Accueil{% endblock %}
+{% block crumb %}Bonjour {{ request.user.full_name }}{% endblock %}
+{% block page_title %}{% if request.user.is_admin %}Mon espace{% else %}Les gains{% endif %}{% endblock %}
 {% block content %}
 <section class="gain-hero">
   <p class="gain-label">Argent encaissé au total</p>
@@ -11,8 +13,45 @@
   </div>
 </section>
 
-<a class="btn btn-call btn-xl btn-block" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ dev_wa }}?text={{ 'Bonjour, je voudrais parler des bracelets Sèmè Kids.'|urlencode }}">
-  <svg class="ic"><use href="#i-wa"/></svg><span><b>Écrire aux développeurs</b><small>WhatsApp {{ dev_wa_pretty }}</small></span></a>
+<div class="install-card" data-install-card hidden>
+  <span class="qa-ic"><svg class="ic"><use href="#i-phone"/></svg></span>
+  <div><b>Installer Sèmè Kids sur ce téléphone</b><small>Une icône sur l'écran d'accueil : plus besoin de chercher le lien.</small></div>
+  <button class="btn btn-primary btn-sm" type="button" data-install>Installer</button>
+</div>
+<div class="install-card" data-install-ios hidden>
+  <span class="qa-ic"><svg class="ic"><use href="#i-phone"/></svg></span>
+  <div><b>Installer sur iPhone</b><small>Touchez le bouton Partager (carré avec une flèche), puis « Sur l'écran d'accueil ».</small></div>
+</div>
+
+{% if can.links %}
+<section class="quick" aria-labelledby="quick-t">
+  <h2 id="quick-t">Que voulez-vous faire&nbsp;?</h2>
+  <div class="quick-grid">
+    <a class="qa qa-main" href="{% url 'dev:link_new' %}"><span class="qa-ic"><svg class="ic"><use href="#i-cash"/></svg></span><span><b>J'ai reçu un paiement</b><small>Créer le lien et l'envoyer, ou inscrire moi-même les enfants</small></span></a>
+    <a class="qa" href="{% url 'dev:links' %}"><span class="qa-ic"><svg class="ic"><use href="#i-child"/></svg></span><span><b>Voir les inscriptions</b><small>Qui a rempli, combien de places restent</small></span></a>
+  </div>
+</section>
+{% endif %}
+
+{% if request.user.is_admin %}
+<div class="guide-note"><svg class="ic"><use href="#i-shield"/></svg><p><b>Les bracelets sont préparés par vos développeurs.</b> Dès que les fiches sont remplies, l'équipe technique génère les QR codes sécurisés et prépare les bracelets à imprimer. Vous n'avez rien d'autre à faire.</p></div>
+{% endif %}
+
+<section class="panel" id="equipe">
+  <h2>Votre équipe technique</h2>
+  <p class="help">Touchez un nom pour discuter sur WhatsApp.</p>
+  <ul class="team-list">
+    {% for d in team %}
+    <li>
+      <span class="avatar">{{ d.name|slice:":1"|upper }}</span>
+      <div><strong>{{ d.name }}</strong><small>{{ d.title }}{% if d.pretty %} · {{ d.pretty }}{% endif %}</small></div>
+      {% if d.wa %}<a class="btn btn-wa btn-sm" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ d.wa }}?text={{ "Bonjour, c'est au sujet de Sèmè Kids."|urlencode }}"><svg class="ic"><use href="#i-wa"/></svg><span>WhatsApp</span></a>{% endif %}
+    </li>
+    {% empty %}
+    <li><div><strong>{{ site.dev_name }}</strong></div><a class="btn btn-wa btn-sm" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ dev_wa }}"><svg class="ic"><use href="#i-wa"/></svg><span>WhatsApp</span></a></li>
+    {% endfor %}
+  </ul>
+</section>
 
 <section class="panel">
   <h2>Par pèlerinage</h2>
@@ -33,7 +72,6 @@
   <ul class="gain-list">
     {% for l in recent %}<li><span>{{ l.created_at|date:"j M" }}<small>{{ l.quota }} enfant{{ l.quota|pluralize }}</small></span><b>{{ l.amount_received|fcfa }}</b></li>{% endfor %}
   </ul>
-  <p class="help">Par discrétion, les noms des familles et des enfants ne sont pas affichés ici.</p>
 </section>
 {% endif %}
 {% endblock %}

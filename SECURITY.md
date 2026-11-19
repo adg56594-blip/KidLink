@@ -80,7 +80,7 @@ Contrôles complémentaires :
 | Mots de passe | Argon2id |
 | Liens d'inscription, invitations | seule une empreinte HMAC-SHA256 est stockée |
 | Secrets 2FA | chiffrés en base |
-| `pytest` (77 tests unitaires et d'intégration) | 77 réussis |
+| `pytest` (82 tests unitaires et d'intégration) | 82 réussis |
 | `bandit` (analyse statique Python) | 0 problème |
 | `pip-audit` (vulnérabilités connues des dépendances) | 0 vulnérabilité |
 | `manage.py check --deploy` | 0 avertissement |
@@ -127,7 +127,13 @@ Contrôles complémentaires :
    une double authentification forte. La variable `KIDLINK_2FA_PAUSE_UNTIL` (pause de la 2FA,
    7 jours maximum) ne doit servir qu'aux tests.
 5. **Perte de la clé 2FA du développeur principal** : pas de récupération automatique prévue.
-6. **Journal des scans** : un attaquant disposant de nombreuses adresses IP peut le faire grossir
+6. **« Rester connecté » (30 jours)** : si le téléphone de l'administrateur est volé déverrouillé,
+   le voleur accède à son espace (gains, liens, inscrits) — mais jamais aux QR codes ni aux PDF.
+   Parade : un développeur suspend le compte dans « Compte administrateur » (effet immédiat).
+7. **Contrôle d'accès par vue** : l'administrateur pouvant ouvrir certaines pages de gestion,
+   chaque adresse vérifie ses propres droits ; un test parcourt automatiquement toutes les
+   adresses de la console avec le compte administrateur.
+8. **Journal des scans** : un attaquant disposant de nombreuses adresses IP peut le faire grossir
    (limité à 60 requêtes par minute et par IP).
 
 ## Rejouer les tests

@@ -8,6 +8,7 @@
     {% csrf_token %}
     {% include "partials/field.html" with field=form.email %}
     {% include "partials/field.html" with field=form.password %}
+    {% include "partials/field.html" with field=form.remember %}
     <button class="btn btn-primary btn-lg btn-block" type="submit"><svg class="ic"><use href="#i-lock"/></svg> Se connecter</button>
   </form>
 </div>

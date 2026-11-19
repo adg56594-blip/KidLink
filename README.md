@@ -22,7 +22,7 @@ l'administration encaisse elle-même, puis génère un lien d'inscription.
 |---|---|
 | Développeur principal | **Tout** : pèlerinages, liens après paiement, enfants inscrits, PDF des bracelets, effacement des données, compte de l'administrateur, équipe technique, journal, réglages. |
 | Sous-développeur | Uniquement les droits cochés par le développeur principal. |
-| Administrateur | **Ne gère rien.** Une seule page, « Les gains » : argent encaissé, nombre de paiements et d'enfants, par pèlerinage, et un bouton WhatsApp vers les développeurs. Il ne voit aucun nom, aucun QR code, aucun PDF. Il reste le contact des parents sur le site public. |
+| Administrateur (le patron) | Voit les gains, crée et envoie les liens après paiement, remplit lui-même des fiches s'il le souhaite, voit les inscrits, contacte chaque développeur sur WhatsApp. **Jamais** d'accès aux QR codes ni aux PDF (les développeurs préparent les bracelets). Peut installer l'application sur son téléphone et cocher « Rester connecté » (30 jours). Il reste le contact des parents sur le site public. |
 
 Le tableau de bord des développeurs contient un **mode d'emploi** qui explique chaque fonction.
 
