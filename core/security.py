@@ -29,7 +29,7 @@ CSP = "; ".join(
 
 ALLOWED_METHODS = {"GET", "HEAD", "POST"}  # TRACE, PUT, DELETE, OPTIONS… : refusés partout
 STAFF_PREFIXES = ("/espace/", "/dev/")
-PRIVATE_PREFIXES = STAFF_PREFIXES + ("/i/", "/connexion", "/invitation/", "/inscription-administrateur/")
+PRIVATE_PREFIXES = STAFF_PREFIXES + ("/i/", "/connexion", "/invitation/", "/inscription-administrateur/", "/nouveau-mot-de-passe/")
 
 
 MAX_2FA_PAUSE = timedelta(days=7)

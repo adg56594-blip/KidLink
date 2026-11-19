@@ -1,0 +1,8 @@
+{% if reset %}
+<section class="newlink">
+  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Lien « nouveau mot de passe » pour {{ reset.name }}</h2><p>Valable 24 h, une seule fois. Il ne sera plus affiché : envoyez-le maintenant. Le code de sécurité à 6 chiffres reste demandé à la connexion.</p></div></div>
+  <div class="copy-row"><input id="reset-link" readonly value="{{ reset.url }}" aria-label="Lien de réinitialisation"><button class="btn btn-light" type="button" data-copy="#reset-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
+  <a class="btn btn-wa" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ reset.phone|default:admin_wa }}?text={% filter urlencode %}Bonjour {{ reset.name }}, voici votre lien pour choisir un nouveau mot de passe Sèmè Kids (valable 24 h, une seule fois) : {{ reset.url }}{% endfilter %}"><svg class="ic"><use href="#i-wa"/></svg> Envoyer par WhatsApp</a>
+  <p class="help">Si la personne a aussi perdu son téléphone (code à 6 chiffres), utilisez en plus « Nouveau code de sécurité ».</p>
+</section>
+{% endif %}

@@ -18,6 +18,7 @@ auth_patterns = [
     path("deconnexion/", auth.logout_view, name="logout"),
     re_path(r"^invitation/(?P<token>[A-Za-z0-9_\-]{20,64})/$", auth.accept_invitation, name="invite"),
     re_path(r"^inscription-administrateur/(?P<token>[A-Za-z0-9_\-]{20,64})/$", auth.accept_invitation, name="register_admin"),
+    re_path(r"^nouveau-mot-de-passe/(?P<token>[A-Za-z0-9_\-]{20,64})/$", auth.reset_password, name="reset_password"),
 ]
 
 # Administrateur : il ne fait que regarder les gains.
@@ -44,6 +45,7 @@ dev_patterns = [
     path("administrateur/", dev.accounts, name="accounts"),
     path("administrateur/inscription/", dev.principal_invite, name="principal_invite"),
     path("administrateur/<int:pk>/action/", dev.account_action, name="account_action"),
+    path("comptes/<int:pk>/mot-de-passe/", dev.password_reset_link, name="password_reset_link"),
     path("equipe/", dev.team, name="team"),
     path("equipe/<int:pk>/", dev.team_member, name="team_member"),
     path("invitations/<int:pk>/annuler/", dev.invite_revoke, name="invite_revoke"),

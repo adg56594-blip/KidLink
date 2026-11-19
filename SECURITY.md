@@ -80,7 +80,7 @@ Contrôles complémentaires :
 | Mots de passe | Argon2id |
 | Liens d'inscription, invitations | seule une empreinte HMAC-SHA256 est stockée |
 | Secrets 2FA | chiffrés en base |
-| `pytest` (82 tests unitaires et d'intégration) | 82 réussis |
+| `pytest` (86 tests unitaires et d'intégration) | 86 réussis |
 | `bandit` (analyse statique Python) | 0 problème |
 | `pip-audit` (vulnérabilités connues des dépendances) | 0 vulnérabilité |
 | `manage.py check --deploy` | 0 avertissement |
@@ -109,6 +109,15 @@ Contrôles complémentaires :
   est refusé. **3 échecs en 15 minutes = déconnexion** et blocage ; chaque tentative est journalisée.
 - Effet : un pirate qui aurait volé une session ouverte (sans le mot de passe ni le téléphone)
   ne peut rien effacer.
+
+## Mot de passe oublié
+
+Pas d'e-mail automatique (donc pas de lien envoyé à une boîte piratée) : un développeur habilité
+génère un lien unique, valable 24 h, à transmettre par WhatsApp. Le lien n'est montré qu'une fois,
+seule son empreinte est stockée, il ne peut pas servir à créer un compte, son utilisation ferme
+toutes les sessions ouvertes du compte, et **le code de sécurité à 6 chiffres reste exigé** ensuite.
+L'administrateur ne peut générer aucun lien. Le développeur principal passe par une commande
+exécutée sur le serveur.
 
 ## Risques résiduels connus (à connaître, assumés ou à décider)
 

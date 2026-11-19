@@ -429,3 +429,63 @@ def test_dev_phone_shown_to_admin(client, lead_dev, admin):
     staff_client(c, admin)
     page = c.get("/espace/").content.decode()
     assert "Modeste Dev" in page and "wa.me/2290167324361" in page
+
+
+def test_forgotten_password_flow_for_admin(client, lead_dev, admin):
+    staff_client(client, lead_dev)
+    r = client.post(f"/dev/comptes/{admin.pk}/mot-de-passe/")
+    assert r.status_code == 302
+    page = client.get("/dev/administrateur/").content.decode()
+    token = __import__("re").search(r"/nouveau-mot-de-passe/([\w\-]+)/", page).group(1)
+    assert "/nouveau-mot-de-passe/" not in client.get("/dev/administrateur/").content.decode()  # affiché une seule fois
+    # l'administrateur avait une session ouverte : elle sera fermée par le changement
+    old = Client()
+    staff_client(old, admin)
+    anon = Client()
+    assert anon.get(f"/nouveau-mot-de-passe/{token}/").status_code == 200
+    assert anon.post(f"/nouveau-mot-de-passe/{token}/", {"password1": "123", "password2": "123"}).status_code == 200  # trop faible
+    new = "Nouveau-Mot-De-Passe-2026!"
+    r = anon.post(f"/nouveau-mot-de-passe/{token}/", {"password1": new, "password2": new})
+    assert r.status_code == 302 and r["Location"].endswith("/connexion/")
+    admin.refresh_from_db()
+    assert admin.check_password(new)
+    assert old.get("/espace/").status_code == 302  # ancienne session fermée
+    assert Client().get(f"/nouveau-mot-de-passe/{token}/").status_code == 404  # usage unique
+    # le code de sécurité reste exigé
+    c = Client()
+    c.post("/connexion/", {"email": admin.email, "password": new})
+    assert c.get("/espace/").status_code == 302
+    assert AuditLog.objects.filter(action="password_reset_done").exists()
+
+
+def test_reset_link_permissions(client, lead_dev, admin):
+    sub = make_user("acc@t.bj", User.DEVELOPER, roles=["accounts"])
+    other = make_user("other@t.bj", User.DEVELOPER, roles=["audit"])
+    c = Client(); staff_client(c, sub)
+    assert c.post(f"/dev/comptes/{admin.pk}/mot-de-passe/").status_code == 302  # rôle « comptes » : OK pour l'admin
+    assert c.post(f"/dev/comptes/{other.pk}/mot-de-passe/").status_code == 403  # pas pour un développeur
+    assert c.post(f"/dev/comptes/{lead_dev.pk}/mot-de-passe/").status_code == 403
+    c2 = Client(); staff_client(c2, admin)
+    assert c2.post(f"/dev/comptes/{admin.pk}/mot-de-passe/").status_code == 403  # l'admin ne peut rien générer
+    c3 = Client(); staff_client(c3, lead_dev)
+    assert c3.post(f"/dev/comptes/{other.pk}/mot-de-passe/").status_code == 302
+    assert c3.post(f"/dev/comptes/{lead_dev.pk}/mot-de-passe/").status_code == 403  # pas pour soi-même
+
+
+def test_reset_token_cannot_create_account(lead_dev, admin):
+    from core.services import create_password_reset_link
+
+    url = create_password_reset_link(admin, lead_dev)
+    token = url.rstrip("/").rsplit("/", 1)[1]
+    assert Client().get(f"/invitation/{token}/").status_code == 404
+    assert Client().get(f"/inscription-administrateur/{token}/").status_code == 404
+
+
+def test_reset_password_command_for_lead_dev(lead_dev, capsys):
+    from django.core.management import call_command
+
+    call_command("reset_password", email=lead_dev.email, reset_2fa=True)
+    out = capsys.readouterr().out
+    assert "/nouveau-mot-de-passe/" in out
+    lead_dev.refresh_from_db()
+    assert not lead_dev.totp_confirmed

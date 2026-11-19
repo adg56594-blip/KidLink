@@ -12,7 +12,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
-from ..forms import ChangePasswordForm, LoginForm, OTPForm, ProfileForm, SetPasswordForm
+from ..forms import ChangePasswordForm, LoginForm, NewPasswordForm, OTPForm, ProfileForm, SetPasswordForm
 from ..models import Invitation, User
 from ..security import two_factor_paused_until
 from ..utils import audit, client_ip, rate_limited, reset_rate
@@ -154,7 +154,7 @@ def accept_invitation(request, token):
     if rate_limited(f"invite:{ip}", 20, 600):
         raise Http404
     inv = Invitation.objects.filter(token_hash=crypto.token_hash(token)).select_related("created_by").first()
-    if inv is None or not inv.usable:
+    if inv is None or not inv.usable or inv.kind == Invitation.PASSWORD_RESET:
         return render(request, "auth/invite_invalid.html", status=404)
     principal = inv.kind in (Invitation.PRINCIPAL_ADMIN, Invitation.LEAD_DEV)
     kind = User.DEVELOPER if inv.kind in (Invitation.SUB_DEV, Invitation.LEAD_DEV) else User.ADMIN
@@ -223,3 +223,33 @@ def change_password(request):
         return redirect(request.path)
     base = "dev/base.html"
     return render(request, "auth/password.html", {"form": form, "profile": profile, "base": base, "nav": "account"})
+
+
+@require_http_methods(["GET", "POST"])
+def reset_password(request, token):
+    """« Mot de passe oublié » : lien unique créé par un développeur et envoyé par WhatsApp.
+    Le code de sécurité à 6 chiffres reste demandé à la connexion suivante."""
+    ip = client_ip(request)
+    if rate_limited(f"reset:{ip}", 20, 600):
+        raise Http404
+    inv = Invitation.objects.filter(token_hash=crypto.token_hash(token), kind=Invitation.PASSWORD_RESET).select_related("target").first()
+    if inv is None or not inv.usable or inv.target is None or not inv.target.is_active:
+        return render(request, "auth/invite_invalid.html", status=404)
+    if request.user.is_authenticated:
+        logout(request)
+    user = inv.target
+    form = NewPasswordForm(user, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            inv = Invitation.objects.select_for_update().get(pk=inv.pk)
+            if not inv.usable:
+                return render(request, "auth/invite_invalid.html", status=404)
+            user.set_password(form.cleaned_data["password1"])
+            user.save(update_fields=["password"])  # toutes les sessions ouvertes de ce compte sont fermées
+            inv.used_at = timezone.now()
+            inv.save(update_fields=["used_at"])
+        reset_rate(f"login-acc:{user.email}")
+        audit(request, "password_reset_done", user.email, actor=user)
+        messages.success(request, "Mot de passe changé. Connectez-vous avec votre nouveau mot de passe et votre code de sécurité.")
+        return redirect("auth:login")
+    return render(request, "auth/reset_password.html", {"form": form, "target": user})

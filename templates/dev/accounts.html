@@ -3,6 +3,7 @@
 {% block page_title %}Compte administrateur{% endblock %}
 {% block content %}
 <div class="guide-note"><svg class="ic"><use href="#i-users"/></svg><p><b>À quoi sert cette page ?</b> L'administrateur voit les gains, crée et envoie les liens après paiement, peut remplir lui-même les fiches et voit les inscrits. Il n'a <b>jamais</b> accès aux QR codes ni aux PDF : pour lui, ce sont les développeurs qui préparent les bracelets. Ici, vous créez son accès, vous le suspendez, ou vous réinitialisez son code de sécurité s'il a changé de téléphone.</p></div>
+{% include "partials/reset_link.html" %}
 {% if invite_url %}
 <section class="newlink">
   <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Lien d'inscription de l'administrateur prêt</h2><p>Valable 48 h, une seule fois. Elle ne sera plus affichée.</p></div></div>
@@ -33,7 +34,8 @@
       <div><strong>{{ a.full_name }}</strong><small>{{ a.email }} · {{ a.title }} · 2FA {% if a.totp_confirmed %}active{% else %}non configurée{% endif %}</small>
         <div class="tags">{% for r in a.role_labels %}<span class="tag">{{ r }}</span>{% endfor %}</div></div>
       <div class="row-actions">
-        <form method="post" action="{% url 'dev:account_action' a.pk %}" data-confirm="Réinitialiser la double authentification de {{ a.full_name }} ?">{% csrf_token %}<button class="btn btn-light btn-sm" name="action" value="reset_2fa">Réinit. 2FA</button></form>
+        <form method="post" action="{% url 'dev:password_reset_link' a.pk %}" data-confirm="Créer un lien « nouveau mot de passe » pour {{ a.full_name }} ? Son mot de passe actuel restera valable tant que le lien n'est pas utilisé.">{% csrf_token %}<button class="btn btn-light btn-sm" type="submit"><svg class="ic"><use href="#i-lock"/></svg> Mot de passe oublié</button></form>
+        <form method="post" action="{% url 'dev:account_action' a.pk %}" data-confirm="Réinitialiser le code de sécurité de {{ a.full_name }} (nouveau téléphone) ? À sa prochaine connexion, il scannera un nouveau QR code dans Google Authenticator.">{% csrf_token %}<button class="btn btn-light btn-sm" name="action" value="reset_2fa"><svg class="ic"><use href="#i-phone"/></svg> Nouveau code de sécurité</button></form>
         <form method="post" action="{% url 'dev:account_action' a.pk %}" data-confirm="{% if a.is_active %}Suspendre{% else %}Réactiver{% endif %} {{ a.full_name }} ?">{% csrf_token %}<button class="btn btn-sm {% if a.is_active %}btn-danger-soft{% else %}btn-light{% endif %}" name="action" value="toggle">{% if a.is_active %}Suspendre{% else %}Réactiver{% endif %}</button></form>
       </div>
     </li>

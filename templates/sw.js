@@ -5,7 +5,7 @@ const CORE = [
   '/', '/scanner/', '/v/_/', '/hors-ligne/', '/manifest.webmanifest',
   {% for a in assets %}'{{ a }}'{% if not forloop.last %}, {% endif %}{% endfor %}
 ];
-const PRIVATE = ['/espace/', '/dev/', '/i/', '/connexion', '/invitation/', '/inscription-administrateur/', '/api/'];
+const PRIVATE = ['/espace/', '/dev/', '/i/', '/connexion', '/invitation/', '/inscription-administrateur/', '/nouveau-mot-de-passe/', '/api/'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));

@@ -87,6 +87,26 @@ class SetPasswordForm(forms.Form):
         return d
 
 
+class NewPasswordForm(forms.Form):
+    password1 = forms.CharField(label="Nouveau mot de passe (12 caractères minimum)", strip=False, widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
+    password2 = forms.CharField(label="Retapez le nouveau mot de passe", strip=False, widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
+
+    def __init__(self, user, *a, **kw):
+        self.user = user
+        super().__init__(*a, **kw)
+
+    def clean(self):
+        d = super().clean()
+        if d.get("password1") != d.get("password2"):
+            self.add_error("password2", "Les deux mots de passe ne sont pas identiques.")
+        elif d.get("password1"):
+            try:
+                validate_password(d["password1"], self.user)
+            except forms.ValidationError as e:
+                self.add_error("password1", e)
+        return d
+
+
 class ProfileForm(forms.Form):
     full_name = TextField(label="Nom complet (affiché à l'administrateur)", max_length=120)
     phone = PhoneField(label="Numéro WhatsApp", required=False, help_text="L'administrateur pourra vous écrire en un clic.")

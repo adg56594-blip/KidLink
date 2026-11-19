@@ -3,6 +3,7 @@
 {% block crumb %}Équipe technique{% endblock %}
 {% block page_title %}{{ member.full_name }}{% endblock %}
 {% block content %}
+{% include "partials/reset_link.html" %}
 <div class="panel narrow">
   <div class="profile"><span class="avatar">{{ member.full_name|slice:":1"|upper }}</span><div><strong>{{ member.full_name }}</strong><span>{{ member.email }}</span></div></div>
   <form method="post" novalidate>
@@ -13,5 +14,10 @@
       <button class="btn {% if member.is_active %}btn-danger-soft{% else %}btn-light{% endif %}" type="submit" name="action" value="toggle">{% if member.is_active %}Suspendre{% else %}Réactiver{% endif %}</button>
     </div>
   </form>
+  <h3 class="sub">Accès oublié</h3>
+  <div class="form-actions start">
+    <form method="post" action="{% url 'dev:password_reset_link' member.pk %}" data-confirm="Créer un lien « nouveau mot de passe » pour {{ member.full_name }} ?">{% csrf_token %}<button class="btn btn-light" type="submit"><svg class="ic"><use href="#i-lock"/></svg> Mot de passe oublié</button></form>
+    <form method="post" action="{% url 'dev:team_member' member.pk %}" data-confirm="Réinitialiser le code de sécurité de {{ member.full_name }} ?">{% csrf_token %}<button class="btn btn-light" type="submit" name="action" value="reset_2fa"><svg class="ic"><use href="#i-phone"/></svg> Nouveau code de sécurité</button></form>
+  </div>
 </div>
 {% endblock %}

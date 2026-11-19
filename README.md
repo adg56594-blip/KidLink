@@ -100,6 +100,16 @@ Le contrôle de santé `/healthz/` empêche une version cassée de remplacer cel
 3. Après le premier déploiement, créez le développeur principal : `railway run python manage.py create_developer --email … --name …`.
 4. Ajoutez une tâche cron Railway pour la purge nocturne : `python manage.py purge_expired --grace 15`.
 
+## Mot de passe oublié
+
+- **Administrateur** : Console → Compte administrateur → « Mot de passe oublié » → lien unique (24 h) à
+  lui envoyer par WhatsApp. « Nouveau code de sécurité » s'il a changé de téléphone.
+- **Sous-développeur** : Équipe technique → son nom → « Mot de passe oublié ».
+- **Développeur principal** : depuis le serveur (`railway ssh`) :
+  `python manage.py reset_password --email votre@email` (`--reset-2fa` si téléphone perdu).
+
+Le lien seul ne suffit jamais pour entrer : le code de sécurité à 6 chiffres reste demandé.
+
 ## Contacts
 
 - Administration (appel et WhatsApp) : +229 98 18 47 59

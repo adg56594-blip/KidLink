@@ -59,3 +59,26 @@ def reset_all_data(user=None):
         Event.objects.all().delete()
         Invitation.objects.filter(used_at__isnull=True).exclude(kind=Invitation.LEAD_DEV).update(revoked=True)
     return counts
+
+
+RESET_LINK_HOURS = 24
+
+
+def create_password_reset_link(target, created_by=None):
+    """Lien unique (24 h) pour choisir un nouveau mot de passe. Les anciens liens du compte sont annulés.
+    Le code de sécurité à 6 chiffres reste exigé à la connexion : le lien seul ne suffit pas pour entrer."""
+    from datetime import timedelta
+
+    from django.conf import settings
+
+    from . import crypto
+    from .models import Invitation
+
+    Invitation.objects.filter(kind=Invitation.PASSWORD_RESET, target=target, used_at__isnull=True).update(revoked=True)
+    token = crypto.new_token(32)
+    Invitation.objects.create(
+        kind=Invitation.PASSWORD_RESET, target=target, email=target.email, full_name=target.full_name,
+        token_hash=crypto.token_hash(token), created_by=created_by,
+        expires_at=timezone.now() + timedelta(hours=RESET_LINK_HOURS),
+    )
+    return f"{settings.KIDLINK_PUBLIC_URL}/nouveau-mot-de-passe/{token}/"

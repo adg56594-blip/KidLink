@@ -112,10 +112,12 @@ class Invitation(models.Model):
     LEAD_DEV = "lead_dev"
     PRINCIPAL_ADMIN = "principal_admin"
     SUB_DEV = "sub_dev"
+    PASSWORD_RESET = "password_reset"  # nosec B105
     KINDS = [
         (LEAD_DEV, "Développeur principal"),
         (PRINCIPAL_ADMIN, "Administrateur"),
         (SUB_DEV, "Sous-développeur"),
+        (PASSWORD_RESET, "Nouveau mot de passe"),
     ]
     kind = models.CharField(max_length=20, choices=KINDS)
     email = models.EmailField(blank=True)
@@ -123,6 +125,8 @@ class Invitation(models.Model):
     roles = models.JSONField(default=list, blank=True)
     token_hash = models.CharField(max_length=64, unique=True)
     created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name="+")
+    # Pour un lien « mot de passe oublié » : le compte concerné.
+    target = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)

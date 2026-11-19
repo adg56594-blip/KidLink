@@ -15,8 +15,8 @@ from ..forms import EventForm, InviteForm, LinkForm, PurgeForm, ResetDataForm, R
 from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, User
 from ..roles import DEV_ROLES, clean_roles
 from ..security import developer_required, lead_dev_required, role_required, two_factor_paused_until
-from ..services import pdf_response, purge_event, reset_all_data
-from ..utils import audit, rate_count, rate_limited, reset_rate
+from ..services import create_password_reset_link, pdf_response, purge_event, reset_all_data
+from ..utils import audit, rate_count, rate_limited, reset_rate, wa_number
 
 
 def ctx(nav, **extra):
@@ -256,7 +256,8 @@ def accounts(request):
     has_admin = admins.filter(is_principal=True).exists()
     invites = Invitation.objects.filter(kind=Invitation.PRINCIPAL_ADMIN, used_at__isnull=True, revoked=False, expires_at__gt=timezone.now())
     url = request.session.pop("principal_invite_url", None)
-    return render(request, "dev/accounts.html", ctx("accounts", admins=admins, has_admin=has_admin, invites=invites, invite_url=url))
+    reset = request.session.pop("reset_link", None)
+    return render(request, "dev/accounts.html", ctx("accounts", admins=admins, has_admin=has_admin, invites=invites, invite_url=url, reset=reset))
 
 
 @role_required("accounts")
@@ -301,6 +302,30 @@ def account_action(request, pk):
     return redirect("dev:accounts")
 
 
+@require_POST
+def password_reset_link(request, pk):
+    """« Mot de passe oublié » : lien unique à envoyer par WhatsApp.
+    - administrateur : développeurs ayant le rôle « accounts » ;
+    - sous-développeur : développeur principal uniquement ;
+    - développeur principal : impossible ici (commande « reset_password » depuis Railway)."""
+    target = get_object_or_404(User, pk=pk)
+    if target.is_admin:
+        allowed = request.user.has_role("accounts")
+        back = redirect("dev:accounts")
+    elif target.is_developer and not target.is_principal:
+        allowed = request.user.is_lead_dev
+        back = redirect("dev:team_member", pk=target.pk)
+    else:
+        allowed = False
+        back = None
+    if not allowed or target.pk == request.user.pk:
+        raise PermissionDenied
+    url = create_password_reset_link(target, created_by=request.user)
+    audit(request, "password_reset_link_created", target.email)
+    request.session["reset_link"] = {"url": url, "name": target.full_name, "phone": wa_number(target.phone), "pk": target.pk}
+    return back
+
+
 # ================================================================== équipe technique
 @lead_dev_required
 @require_http_methods(["GET", "POST"])
@@ -336,13 +361,20 @@ def team_member(request, pk):
             member.is_active = not member.is_active
             member.save(update_fields=["is_active"])
             audit(request, "subdev_toggled", f"{member.email} actif={member.is_active}")
+        elif request.POST.get("action") == "reset_2fa":
+            member.totp_secret = ""  # nosec B105
+            member.totp_confirmed = False
+            member.totp_last_step = 0
+            member.save(update_fields=["totp_secret", "totp_confirmed", "totp_last_step"])
+            audit(request, "subdev_reset_2fa", member.email)
         elif form.is_valid():
             member.roles = clean_roles(form.cleaned_data["roles"], DEV_ROLES)
             member.save(update_fields=["roles"])
             audit(request, "subdev_roles", f"{member.email} : {', '.join(member.roles)}")
         messages.success(request, "Modifications enregistrées.")
         return redirect("dev:team")
-    return render(request, "dev/team_member.html", ctx("team", member=member, form=form))
+    reset = request.session.pop("reset_link", None)
+    return render(request, "dev/team_member.html", ctx("team", member=member, form=form, reset=reset))
 
 
 @lead_dev_required
