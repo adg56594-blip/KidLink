@@ -14,8 +14,15 @@ from django.conf import settings
 
 from . import crypto
 
-VERSION = "1"
-FIELDS = ["expiry", "nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_phone", "ref"]
+# Version 1 : sans le nom du chargé. Version 2 : nom du chargé ajouté à la fin.
+# Les deux restent valides : les bracelets déjà créés continuent de fonctionner.
+FIELDS_BY_VERSION = {
+    "1": ["expiry", "nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_phone", "ref"],
+    "2": ["expiry", "nom", "prenom", "parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_phone", "ref", "charge_name"],
+}
+VERSION = "2"
+FIELDS = FIELDS_BY_VERSION[VERSION]
+SIGN_PREFIX = "KL1"  # préfixe du message signé (inchangé ; la version est dans le contenu signé)
 
 
 def _clean(v: str) -> str:
@@ -23,7 +30,7 @@ def _clean(v: str) -> str:
 
 
 def signed_message(public_id: str, payload: str) -> bytes:
-    return f"KL{VERSION}|{public_id}|{payload}".encode("utf-8")
+    return f"{SIGN_PREFIX}|{public_id}|{payload}".encode("utf-8")
 
 
 def build_fragment(public_id: str, expiry, data: dict) -> str:
@@ -54,6 +61,9 @@ def verify_fragment(public_id: str, fragment: str) -> Decoded:
     if not crypto.verify(signed_message(public_id, payload), sig):
         return Decoded(False)
     parts = payload.split("|")
-    if parts[0] != VERSION or len(parts) != len(FIELDS) + 1:
+    fields = FIELDS_BY_VERSION.get(parts[0])
+    if fields is None or len(parts) != len(fields) + 1:
         return Decoded(False)
-    return Decoded(True, payload, dict(zip(FIELDS, parts[1:])))
+    data = dict(zip(fields, parts[1:]))
+    data.setdefault("charge_name", "")
+    return Decoded(True, payload, data)

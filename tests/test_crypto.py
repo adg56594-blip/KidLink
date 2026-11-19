@@ -109,3 +109,30 @@ def test_signature_malleability_rejected(db):
     assert s <= P256_N // 2  # signature produite en forme canonique
     flipped = crypto.b64u(r + (P256_N - s).to_bytes(32, "big"))
     assert not verify_fragment("ABCDEFGHJKMN", p64 + "." + flipped).ok
+
+
+def test_charge_name_in_qr_and_old_bracelets_still_valid(db):
+    import segno
+
+    from core.qr import SIGN_PREFIX, qr_url
+
+    data = {**DATA, "charge_name": "Frère Jacques ADJOVI", "charge_phone": "+2290165000000", "ref": "SK-0007"}
+    f = build_fragment("ABCDEFGHJKMN", datetime.date(2027, 1, 1), data)
+    d = verify_fragment("ABCDEFGHJKMN", f).data
+    assert d["charge_name"] == "Frère Jacques ADJOVI" and d["charge_phone"] == "+2290165000000"
+    # Ancien bracelet (version 1, sans nom du chargé) : toujours authentique
+    payload = "1|20270101|HOUNSOU|Marie|Rosine|+2290197000000||Akpakpa|+2290165000000|SK-0001"
+    sig = crypto.sign(f"{SIGN_PREFIX}|ABCDEFGHJKMN|{payload}".encode())
+    old = crypto.b64u(payload.encode()) + "." + crypto.b64u(sig)
+    d1 = verify_fragment("ABCDEFGHJKMN", old).data
+    assert d1["charge_name"] == "" and d1["ref"] == "SK-0001"
+    # Version inconnue ou nombre de champs incohérent : refusé même si signé
+    for bad in ["3|20270101|A|B|C|D|E|F|G|H|I", "2|20270101|A|B|C|D|E|F|G|H"]:
+        s = crypto.sign(f"{SIGN_PREFIX}|ABCDEFGHJKMN|{bad}".encode())
+        assert not verify_fragment("ABCDEFGHJKMN", crypto.b64u(bad.encode()) + "." + crypto.b64u(s)).ok
+    # Pire cas (tous les champs au maximum) : QR toujours imprimable
+    long = {"nom": "A" * 60, "prenom": "B" * 60, "parent_name": "C" * 80, "paroisse": "D" * 80, "parent_phone": "+2290197000000",
+            "parent_phone2": "+2290197000000", "charge_phone": "+2290197000000", "charge_name": "E" * 80, "ref": "SK-9999"}
+    url = qr_url("ABCDEFGHJKMN", build_fragment("ABCDEFGHJKMN", datetime.date(2027, 1, 1), long))
+    v = segno.make(url, error="m").version
+    assert v <= 22, v

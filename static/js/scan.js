@@ -8,7 +8,11 @@
   var root = document.querySelector('[data-pk]');
   if (!root) return;
   var $ = function (id) { return document.getElementById(id); };
-  var FIELDS = ['expiry', 'nom', 'prenom', 'parent_name', 'parent_phone', 'parent_phone2', 'paroisse', 'charge_phone', 'ref'];
+  // v1 : sans le nom du chargé ; v2 : nom du chargé à la fin. Les deux restent valides.
+  var FIELDS_BY_VERSION = {
+    '1': ['expiry', 'nom', 'prenom', 'parent_name', 'parent_phone', 'parent_phone2', 'paroisse', 'charge_phone', 'ref'],
+    '2': ['expiry', 'nom', 'prenom', 'parent_name', 'parent_phone', 'parent_phone2', 'paroisse', 'charge_phone', 'ref', 'charge_name']
+  };
 
   // Horloge en direct dans le sceau : une capture d'écran ou une fausse page figée se repère.
   function tick() {
@@ -73,7 +77,14 @@
       navigator.geolocation.getCurrentPosition(go, function () { go(null); }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 });
     });
     if (d.parent_phone2) { $('b-call2').hidden = false; $('b-call2').href = telHref(d.parent_phone2); $('b-call2-num').textContent = pretty(d.parent_phone2); }
-    if (d.charge_phone) { $('b-charge').hidden = false; $('b-charge').href = telHref(d.charge_phone); $('b-charge-num').textContent = pretty(d.charge_phone); }
+    if (d.charge_name || d.charge_phone) {
+      $('c-charge-row').hidden = false;
+      $('c-charge').textContent = d.charge_name || pretty(d.charge_phone);
+    }
+    if (d.charge_phone) {
+      $('b-charge').hidden = false; $('b-charge').href = telHref(d.charge_phone); $('b-charge-num').textContent = pretty(d.charge_phone);
+      $('b-charge-name').textContent = d.charge_name ? d.charge_name + ' (chargé)' : 'le chargé';
+    }
     $('child').hidden = false;
     $('bad').hidden = true;
   }
@@ -134,7 +145,8 @@
       sig = b64uBytes(bits[1]);
       fields = payload.split('|');
     } catch (e) { return bad('Bracelet non reconnu'); }
-    if (fields[0] !== '1' || fields.length !== FIELDS.length + 1 || sig.length !== 64) return bad('Bracelet non reconnu');
+    var FIELDS = FIELDS_BY_VERSION[fields[0]];
+    if (!FIELDS || fields.length !== FIELDS.length + 1 || sig.length !== 64) return bad('Bracelet non reconnu');
 
     var local = await verifyLocal(id, payload, sig);
     if (local === false) {
