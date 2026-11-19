@@ -1,4 +1,4 @@
-{% extends "espace/base.html" %}
+{% extends "dev/base.html" %}
 {% block title %}Vider les données{% endblock %}
 {% block crumb %}Événements · {{ ev.title }}{% endblock %}
 {% block page_title %}Vider les données{% endblock %}
@@ -12,7 +12,7 @@
     {% csrf_token %}
     {% include "partials/field.html" with field=form.confirm %}
     <div class="form-actions">
-      <a class="btn btn-light" href="{% url 'espace:events' %}">Annuler</a>
+      <a class="btn btn-light" href="{% url 'dev:events' %}">Annuler</a>
       <button class="btn btn-danger" type="submit">Effacer définitivement</button>
     </div>
   </form>

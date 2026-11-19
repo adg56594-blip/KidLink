@@ -1,12 +1,12 @@
 from .models import SiteSettings
-from .roles import ADMIN_ROLES, DEV_ROLES
+from .roles import DEV_ROLES, GAINS
 from .utils import pretty_phone, wa_number
 
 
 def site(request):
     s = SiteSettings.get()
     user = getattr(request, "user", None)
-    can = {r: user.has_role(r) for r in {**ADMIN_ROLES, **DEV_ROLES}} if user and user.is_authenticated else {}
+    can = {r: user.has_role(r) for r in [*DEV_ROLES, GAINS]} if user and user.is_authenticated else {}
     from .security import two_factor_paused_until
 
     return {

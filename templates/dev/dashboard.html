@@ -1,30 +1,124 @@
-{% extends "dev/base.html" %}
-{% block title %}Console{% endblock %}
-{% block page_title %}Vue d'ensemble{% endblock %}
+{% extends "dev/base.html" %}{% load kl %}
+{% block title %}Tableau de bord{% endblock %}
+{% block crumb %}Bonjour {{ request.user.full_name }}{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+{% block actions %}{% if can.links %}<a class="btn btn-primary" href="{% url 'dev:link_new' %}"><svg class="ic"><use href="#i-plus"/></svg><span>Nouveau paiement</span></a>{% endif %}{% endblock %}
 {% block content %}
-<section class="stats">
-  <article class="stat c-blue"><span class="stat-ic"><svg class="ic"><use href="#i-child"/></svg></span><p>Bracelets générés</p><b>{{ registrations }}</b><small>{{ events }} événement(s) à venir</small></article>
-  <article class="stat c-gold"><span class="stat-ic"><svg class="ic"><use href="#i-clock"/></svg></span><p>PDF en attente de livraison</p><b>{{ pending_count }}</b><small>décision des développeurs</small></article>
-  <article class="stat c-green"><span class="stat-ic"><svg class="ic"><use href="#i-scan"/></svg></span><p>Scans (7 j)</p><b>{{ scans_week }}</b><small>tous résultats</small></article>
-  <article class="stat c-red"><span class="stat-ic"><svg class="ic"><use href="#i-alert"/></svg></span><p>Bracelets falsifiés (7 j)</p><b>{{ forged_week }}</b><small>tentatives détectées</small></article>
+
+{% if featured %}
+<section class="hero-panel">
+  <div class="hp-arcs" aria-hidden="true"></div>
+  <div class="hp-text">
+    <p class="kicker light"><span class="dot"></span> Pèlerinage affiché sur l'accueil</p>
+    <h2>{{ featured.title }}</h2>
+    <p><svg class="ic"><use href="#i-pin"/></svg>{{ featured.location }} · <svg class="ic"><use href="#i-cal"/></svg>{{ featured.starts_on|date:"j F Y" }}</p>
+  </div>
+  <div class="countdown compact" data-countdown="{{ featured.starts_on|date:'Y-m-d' }}T06:00:00">
+    <div class="cd-grid"><div><b data-cd="d">--</b><span>jours</span></div><div><b data-cd="h">--</b><span>h</span></div><div><b data-cd="m">--</b><span>min</span></div></div>
+    <p class="cd-live" hidden>En cours</p>
+  </div>
 </section>
+{% elif can.events %}
+<div class="guide-note warn"><svg class="ic"><use href="#i-alert"/></svg><p><b>Aucun pèlerinage à venir.</b> Commencez par <a href="{% url 'dev:event_new' %}">créer le pèlerinage</a> : il apparaîtra en grand sur l'accueil du site et vous pourrez ensuite créer les liens.</p></div>
+{% endif %}
+
+<section class="quick" aria-labelledby="quick-t">
+  <h2 id="quick-t">Que voulez-vous faire&nbsp;?</h2>
+  <div class="quick-grid">
+    {% if can.links %}<a class="qa qa-main" href="{% url 'dev:link_new' %}"><span class="qa-ic"><svg class="ic"><use href="#i-cash"/></svg></span><span><b>Un paiement a été reçu</b><small>Créer le lien à envoyer à la famille ou à la paroisse</small></span></a>{% endif %}
+    {% if can.links or can.registrations %}<a class="qa" href="{% url 'dev:links' %}"><span class="qa-ic"><svg class="ic"><use href="#i-child"/></svg></span><span><b>Suivre les inscriptions</b><small>Qui a rempli, combien de places restent</small></span></a>{% endif %}
+    {% if can.documents %}<a class="qa" href="{% url 'dev:bracelets' %}"><span class="qa-ic"><svg class="ic"><use href="#i-doc"/></svg></span><span><b>Imprimer les bracelets</b><small>Télécharger les PDF pour l'imprimeur</small></span></a>{% endif %}
+    {% if can.events %}<a class="qa" href="{% url 'dev:events' %}"><span class="qa-ic"><svg class="ic"><use href="#i-cal"/></svg></span><span><b>Le pèlerinage</b><small>Dates, prix, affichage, effacement</small></span></a>{% endif %}
+  </div>
+</section>
+
+<section class="stats">
+  <article class="stat c-gold"><span class="stat-ic"><svg class="ic"><use href="#i-cash"/></svg></span><p>Argent encaissé</p><b>{{ cash|fcfa }}</b><small>visible par l'administrateur</small></article>
+  <article class="stat c-blue"><span class="stat-ic"><svg class="ic"><use href="#i-band"/></svg></span><p>Enfants payés</p><b>{{ places }}</b><small>{{ links_active }} lien(s) actif(s)</small></article>
+  <article class="stat c-green"><span class="stat-ic"><svg class="ic"><use href="#i-child"/></svg></span><p>Enfants inscrits</p><b>{{ filled }}</b>
+    <div class="bar"><progress max="100" value="{{ fill_pct }}">{{ fill_pct }} %</progress><small>{{ pending }} fiche(s) pas encore remplie(s)</small></div></article>
+  <article class="stat c-red"><span class="stat-ic"><svg class="ic"><use href="#i-alert"/></svg></span><p>Faux bracelets (7 j)</p><b>{{ forged_week }}</b><small>{{ scans_week }} scan(s) au total</small></article>
+</section>
+
+<section class="panel guide" aria-labelledby="guide-t">
+  <h2 id="guide-t"><svg class="ic"><use href="#i-heart"/></svg> Mode d'emploi — à lire pour ne pas se tromper</h2>
+  <ol class="flow">
+    <li><b>Le pèlerinage</b><span>Créé une seule fois (dates, lieu, prix par enfant). Il s'affiche en grand sur l'accueil.</span></li>
+    <li><b>Le paiement</b><span>Une famille ou une paroisse paie l'administrateur (espèces, Mobile Money). Il vous prévient sur WhatsApp.</span></li>
+    <li><b>Le lien</b><span>Vous créez un lien pour <u>exactement</u> le nombre d'enfants payés, puis vous l'envoyez par WhatsApp.</span></li>
+    <li><b>Les fiches</b><span>La famille remplit une fiche par enfant. Le lien se ferme tout seul quand le nombre est atteint.</span></li>
+    <li><b>L'impression</b><span>Vous téléchargez le PDF (20 bracelets par page A4) et l'envoyez à l'imprimeur.</span></li>
+    <li><b>Après le pèlerinage</b><span>Vous videz les données (obligatoire pour la protection des enfants). Les gains restent visibles.</span></li>
+  </ol>
+
+  <div class="faq">
+    {% if can.links %}
+    <details><summary><svg class="ic"><use href="#i-cash"/></svg> Nouveau paiement (créer un lien)</summary>
+      <p><b>Quand ?</b> Dès que l'administrateur confirme qu'une famille ou une paroisse a payé.</p>
+      <p><b>Comment ?</b> Indiquez pour qui, qui a payé, le nombre d'enfants <b>tapé deux fois</b>, et l'argent reçu. Le site compare avec le prix normal et vous alerte en cas d'écart. Si vous avez fait une réduction, cochez la case prévue.</p>
+      <p><b>Attention :</b> le lien n'est affiché <b>qu'une seule fois</b>. Envoyez-le tout de suite avec le bouton WhatsApp. Si vous l'avez perdu, ouvrez le lien et touchez « Nouveau lien » : l'ancien cessera de marcher.</p>
+    </details>
+    {% endif %}
+    {% if can.links or can.registrations %}
+    <details><summary><svg class="ic"><use href="#i-link"/></svg> Liens &amp; inscrits</summary>
+      <p>Chaque lien correspond à <b>un paiement</b>. Le cercle vert montre combien de fiches sont remplies sur le nombre payé.</p>
+      <p><b>« Désactiver »</b> un lien : plus personne ne peut s'en servir (paiement annulé, lien envoyé à la mauvaise personne…).</p>
+      <p><b>« Désactiver » un bracelet</b> (dans la liste des enfants) : à faire si un bracelet est perdu ou volé. Quiconque le scanne verra « Bracelet désactivé ».</p>
+    </details>
+    {% endif %}
+    {% if can.documents %}
+    <details><summary><svg class="ic"><use href="#i-doc"/></svg> Bracelets à imprimer (PDF)</summary>
+      <p>Un PDF par paiement, 20 bracelets par page A4, avec le QR code, le nom de l'enfant et sa référence SK-0001.</p>
+      <p><b>Important pour l'imprimeur :</b> imprimer à l'échelle <b>100 %</b> (sans « ajuster à la page ») pour que les QR codes restent lisibles. Les bracelets désactivés ne sont pas imprimés.</p>
+      <p>Si une famille ajoute un enfant plus tard, retéléchargez le PDF : il contient toujours tous les enfants du lien.</p>
+    </details>
+    {% endif %}
+    {% if can.events or can.purge %}
+    <details><summary><svg class="ic"><use href="#i-cal"/></svg> Pèlerinages et effacement des données</summary>
+      <p>Le pèlerinage à venir est affiché en grand sur l'accueil avec un compte à rebours. La <b>date limite d'inscription</b> ferme automatiquement tous les liens.</p>
+      <p>La <b>durée de conservation</b> (par défaut 30 jours après la fin) : passé ce délai, utilisez « Vider les données ». Si vous oubliez, le site les efface tout seul 15 jours plus tard. Les montants encaissés restent visibles sur la page « Les gains ».</p>
+    </details>
+    {% endif %}
+    <details><summary><svg class="ic"><use href="#i-cash"/></svg> Page « Les gains » (ce que voit l'administrateur)</summary>
+      <p>L'administrateur voit <b>uniquement</b> : l'argent encaissé, le nombre de paiements, d'enfants payés et inscrits, par pèlerinage. Il ne voit <b>aucun nom</b> d'enfant ou de famille, aucun QR code, aucun PDF. Il a un bouton pour vous écrire sur WhatsApp.</p>
+      <p>Le montant affiché est celui que <b>vous saisissez</b> en créant chaque lien : soyez exacts.</p>
+    </details>
+    <details><summary><svg class="ic"><use href="#i-scan"/></svg> Comment marche le bracelet</summary>
+      <p>Un passant scanne le QR code : la page affiche le nom de l'enfant, sa paroisse et un gros bouton « Appeler la famille ». Ça marche <b>même sans internet</b> (les informations sont dans le QR code).</p>
+      <p>Chaque QR code est <b>signé</b> : si quelqu'un modifie un numéro ou fabrique un faux, la page affiche « Bracelet FALSIFIÉ ». Le compteur « Faux bracelets » ci-dessus vous alerte.</p>
+    </details>
+    {% if request.user.is_lead_dev or can.accounts or can.audit or can.settings %}
+    <details><summary><svg class="ic"><use href="#i-gear"/></svg> Administration technique</summary>
+      {% if can.accounts %}<p><b>Compte administrateur :</b> créer son accès (lien unique à lui envoyer), le suspendre, réinitialiser son code de sécurité s'il change de téléphone.</p>{% endif %}
+      {% if request.user.is_lead_dev %}<p><b>Équipe technique :</b> inviter d'autres développeurs et cocher exactement ce qu'ils ont le droit de faire.</p>{% endif %}
+      {% if can.audit %}<p><b>Journal de sécurité :</b> chaque action sensible (connexion, lien créé, PDF téléchargé, données vidées…) avec la date et la personne.</p>{% endif %}
+      {% if can.settings %}<p><b>Réglages :</b> numéros affichés sur le site et texte imprimé sous chaque QR code.</p>{% endif %}
+      <p><b>Ne jamais modifier</b> les variables <code>KIDLINK_SIGNING_KEY</code> et <code>KIDLINK_FIELD_KEYS</code> sur Railway : tous les bracelets imprimés deviendraient invalides et les données illisibles.</p>
+    </details>
+    {% endif %}
+  </div>
+</section>
+
 <div class="split">
   <section class="panel">
-    <div class="panel-head"><h2>À livrer</h2>{% if can.deliveries %}<a class="linklike" href="{% url 'dev:deliveries' %}">Gérer</a>{% endif %}</div>
-    {% if pending %}
-    <ul class="link-list">{% for l in pending %}<li><a href="{% if can.deliveries %}{% url 'dev:delivery_edit' l.pk %}{% else %}#{% endif %}"><span class="ll-main"><strong>{{ l.label }}</strong><small>{{ l.event.title }} · {{ l.get_delivery_mode_display }}</small></span><span class="ll-count"><b>{{ l.n }}</b>/{{ l.quota }}</span></a></li>{% endfor %}</ul>
-    {% else %}<div class="empty"><p>Rien en attente.</p></div>{% endif %}
+    <div class="panel-head"><h2>Derniers paiements</h2>{% if can.links or can.registrations %}<a class="linklike" href="{% url 'dev:links' %}">Tout voir</a>{% endif %}</div>
+    {% if recent_links %}
+    <ul class="link-list">
+      {% for l in recent_links %}
+      <li><a href="{% url 'dev:link_detail' l.pk %}">
+        <span class="ll-ring"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" class="ring-bg"/><circle cx="20" cy="20" r="16" class="ring-fg" pathLength="100" stroke-dasharray="{{ l.n|pct:l.quota }} 100"/></svg></span>
+        <span class="ll-main"><strong>{{ l.label }}</strong><small>{{ l.amount_received|fcfa }}</small></span>
+        <span class="ll-count"><b>{{ l.n }}</b>/{{ l.quota }}</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% else %}<div class="empty"><p>Aucun paiement enregistré pour l'instant.</p></div>{% endif %}
   </section>
   <section class="panel">
     <h2>État de sécurité</h2>
+    <p class="help">Tout doit être vert. Une ligne orange = à corriger avant d'utiliser le site pour de vrai.</p>
     <ul class="checks">{% for label, ok in checks %}<li class="{% if ok %}ok{% else %}ko{% endif %}"><svg class="ic"><use href="#{% if ok %}i-check{% else %}i-alert{% endif %}"/></svg>{{ label }}</li>{% endfor %}</ul>
     <p class="muted small">Empreinte de la clé de signature : <code>{{ fingerprint }}</code></p>
   </section>
 </div>
-{% if recent %}
-<section class="panel table-panel">
-  <div class="panel-head"><h2>Activité récente</h2><a class="linklike" href="{% url 'dev:audit' %}">Journal complet</a></div>
-  <table class="table"><tbody>{% for a in recent %}<tr><td class="mono">{{ a.created_at|date:"d/m H:i" }}</td><td><span class="tag">{{ a.action }}</span></td><td>{{ a.actor.full_name|default:"Système" }}</td><td class="muted">{{ a.detail }}</td></tr>{% endfor %}</tbody></table>
-</section>
-{% endif %}
 {% endblock %}

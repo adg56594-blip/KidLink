@@ -1,4 +1,4 @@
-{% extends "espace/base.html" %}{% load kl %}
+{% extends "dev/base.html" %}{% load kl %}
 {% block title %}{{ link.label }}{% endblock %}
 {% block crumb %}Liens d'inscription · {{ link.event.title }}{% endblock %}
 {% block page_title %}{{ link.label }}{% endblock %}
@@ -31,19 +31,19 @@
     </div>
     {% if can.links %}
     <div class="form-actions start">
-      <form method="post" action="{% url 'espace:link_regenerate' link.pk %}" data-confirm="Créer un nouveau lien ? L'ancien ne fonctionnera plus.">{% csrf_token %}<button class="btn btn-light" type="submit"><svg class="ic"><use href="#i-link"/></svg> Nouveau lien (l'ancien est perdu)</button></form>
-      <form method="post" action="{% url 'espace:link_toggle' link.pk %}" data-confirm="{% if link.is_active %}Désactiver ce lien ?{% else %}Réactiver ce lien ?{% endif %}">{% csrf_token %}<button class="btn {% if link.is_active %}btn-danger-soft{% else %}btn-light{% endif %}" type="submit">{% if link.is_active %}Désactiver{% else %}Réactiver{% endif %}</button></form>
+      <form method="post" action="{% url 'dev:link_regenerate' link.pk %}" data-confirm="Créer un nouveau lien ? L'ancien ne fonctionnera plus.">{% csrf_token %}<button class="btn btn-light" type="submit"><svg class="ic"><use href="#i-link"/></svg> Nouveau lien (l'ancien est perdu)</button></form>
+      <form method="post" action="{% url 'dev:link_toggle' link.pk %}" data-confirm="{% if link.is_active %}Désactiver ce lien ?{% else %}Réactiver ce lien ?{% endif %}">{% csrf_token %}<button class="btn {% if link.is_active %}btn-danger-soft{% else %}btn-light{% endif %}" type="submit">{% if link.is_active %}Désactiver{% else %}Réactiver{% endif %}</button></form>
     </div>
     {% endif %}
   </section>
 
   <aside class="panel">
-    <h2>Documents</h2>
-    {% if link.is_released %}
-      <p class="ok-line"><svg class="ic"><use href="#i-check"/></svg> Le PDF des bracelets est disponible.</p>
-      {% if can.documents %}<a class="btn btn-primary btn-block" href="{% url 'espace:document_download' link.pk %}"><svg class="ic"><use href="#i-doc"/></svg> Télécharger le PDF</a>{% endif %}
+    <h2>Bracelets à imprimer</h2>
+    {% if link.used %}
+      <p class="muted">PDF A4, 20 bracelets par page, pour l'imprimeur. Imprimer à 100 %.</p>
+      {% if can.documents %}<a class="btn btn-primary btn-block" href="{% url 'dev:pdf' link.pk %}"><svg class="ic"><use href="#i-doc"/></svg> Télécharger le PDF ({{ link.used }})</a>{% endif %}
     {% else %}
-      <p class="muted"><svg class="ic"><use href="#i-clock"/></svg> Le PDF des bracelets sera transmis par l'équipe technique.</p>
+      <p class="muted"><svg class="ic"><use href="#i-clock"/></svg> Le PDF sera disponible dès qu'un enfant sera inscrit sur ce lien.</p>
     {% endif %}
   </aside>
 </div>
@@ -62,7 +62,7 @@
         <td data-label="Parent">{{ r.parent_name }}<small>{{ r.parent_phone|phone }}</small></td>
         <td data-label="Inscrit le">{{ r.created_at|date:"j M H:i" }}</td>
         <td data-label="Bracelet">
-          <form method="post" action="{% url 'espace:registration_revoke' r.pk %}" data-confirm="{% if r.revoked_at %}Réactiver ce bracelet ?{% else %}Désactiver ce bracelet (perdu ou volé) ?{% endif %}">{% csrf_token %}
+          <form method="post" action="{% url 'dev:registration_revoke' r.pk %}" data-confirm="{% if r.revoked_at %}Réactiver ce bracelet ?{% else %}Désactiver ce bracelet (perdu ou volé) ?{% endif %}">{% csrf_token %}
             <button class="btn btn-sm {% if r.revoked_at %}btn-light{% else %}btn-danger-soft{% endif %}" type="submit">{% if r.revoked_at %}Réactiver{% else %}Désactiver{% endif %}</button>
           </form>
         </td>

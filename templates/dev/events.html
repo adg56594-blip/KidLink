@@ -1,9 +1,9 @@
-{% extends "espace/base.html" %}{% load kl %}
-{% block title %}Événements{% endblock %}
-{% block page_title %}Événements{% endblock %}
-{% block actions %}{% if can.events %}<a class="btn btn-primary" href="{% url 'espace:event_new' %}"><svg class="ic"><use href="#i-plus"/></svg><span>Nouvel événement</span></a>{% endif %}{% endblock %}
+{% extends "dev/base.html" %}{% load kl %}
+{% block title %}Pèlerinages{% endblock %}
+{% block page_title %}Pèlerinages{% endblock %}
+{% block actions %}{% if can.events %}<a class="btn btn-primary" href="{% url 'dev:event_new' %}"><svg class="ic"><use href="#i-plus"/></svg><span>Nouveau pèlerinage</span></a>{% endif %}{% endblock %}
 {% block content %}
-<p class="intro">Le pèlerinage affiché sur l'accueil du site. Après l'événement, pensez à « Vider les données ».</p>
+<div class="guide-note"><svg class="ic"><use href="#i-cal"/></svg><p><b>À quoi sert cette page ?</b> Le pèlerinage à venir s'affiche en grand sur l'accueil, avec un compte à rebours. Après le pèlerinage et la durée de conservation, touchez « Vider les données » : les fiches des enfants sont effacées, les montants encaissés restent sur la page « Les gains ».</p></div>
 {% if events %}
 <div class="event-grid">
 {% for ev in events %}
@@ -25,8 +25,8 @@
     {% if not ev.is_purged %}
     <p class="ec-ret{% if ev.retention_over %} danger{% endif %}"><svg class="ic"><use href="#i-clock"/></svg>Données conservées jusqu'au {{ ev.retention_until|date:"j F Y" }}{% if ev.retention_over %} — à vider{% endif %}</p>
     <div class="ec-actions">
-      {% if can.events %}<a class="btn btn-light btn-sm" href="{% url 'espace:event_edit' ev.pk %}">Modifier</a>{% endif %}
-      {% if can.purge %}<a class="btn btn-danger-soft btn-sm" href="{% url 'espace:event_purge' ev.pk %}">Vider les données</a>{% endif %}
+      {% if can.events %}<a class="btn btn-light btn-sm" href="{% url 'dev:event_edit' ev.pk %}">Modifier</a>{% endif %}
+      {% if can.purge %}<a class="btn btn-danger-soft btn-sm" href="{% url 'dev:event_purge' ev.pk %}">Vider les données</a>{% endif %}
     </div>
     {% else %}
     <p class="ec-ret">Effacé le {{ ev.purged_at|date:"j F Y" }}</p>
@@ -35,6 +35,6 @@
 {% endfor %}
 </div>
 {% else %}
-<div class="panel empty"><svg class="ic"><use href="#i-cal"/></svg><p>Aucun événement. Créez le prochain pèlerinage : il apparaîtra en grand sur la page d'accueil.</p>{% if can.events %}<a class="btn btn-primary" href="{% url 'espace:event_new' %}"><svg class="ic"><use href="#i-plus"/></svg> Créer un événement</a>{% endif %}</div>
+<div class="panel empty"><svg class="ic"><use href="#i-cal"/></svg><p>Aucun événement. Créez le prochain pèlerinage : il apparaîtra en grand sur la page d'accueil.</p>{% if can.events %}<a class="btn btn-primary" href="{% url 'dev:event_new' %}"><svg class="ic"><use href="#i-plus"/></svg> Créer un événement</a>{% endif %}</div>
 {% endif %}
 {% endblock %}

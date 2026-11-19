@@ -147,14 +147,21 @@ def public_key_fingerprint() -> str:
     return hashlib.sha256(public_key_spki_b64().encode()).hexdigest()[:16]
 
 
+# Ordre de la courbe P-256. On impose des signatures « low-S » (s <= n/2) : sinon (r, n - s)
+# serait une seconde signature valide du même contenu (malléabilité ECDSA).
+P256_N = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+
+
 def sign(message: bytes) -> bytes:
     der = _signing_key().sign(message, ec.ECDSA(hashes.SHA256()))
     r, s = decode_dss_signature(der)
+    if s > P256_N // 2:
+        s = P256_N - s
     return r.to_bytes(32, "big") + s.to_bytes(32, "big")  # format brut P1363 (WebCrypto)
 
 
 def verify(message: bytes, raw_sig: bytes) -> bool:
-    if len(raw_sig) != 64:
+    if len(raw_sig) != 64 or int.from_bytes(raw_sig[32:], "big") > P256_N // 2:
         return False
     der = encode_dss_signature(int.from_bytes(raw_sig[:32], "big"), int.from_bytes(raw_sig[32:], "big"))
     try:

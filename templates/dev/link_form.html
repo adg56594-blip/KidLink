@@ -1,8 +1,9 @@
-{% extends "espace/base.html" %}
+{% extends "dev/base.html" %}
 {% block title %}Nouveau lien{% endblock %}
 {% block crumb %}Liens d'inscription{% endblock %}
-{% block page_title %}Nouveau lien après paiement{% endblock %}
+{% block page_title %}Nouveau paiement{% endblock %}
 {% block content %}
+<div class="guide-note"><svg class="ic"><use href="#i-cash"/></svg><p><b>À quoi sert cette page ?</b> À utiliser <b>uniquement après un paiement reçu</b>. Le lien permettra d'inscrire <b>exactement</b> le nombre d'enfants payés, ni plus, ni moins. Il n'est montré qu'une fois : envoyez-le aussitôt par WhatsApp.</p></div>
 {{ prices|json_script:"prices" }}
 <div class="split">
 <form method="post" class="panel form-panel" novalidate id="link-form">
@@ -39,7 +40,7 @@
     {% include "partials/field.html" with field=form.cash_ack %}
   </div>
   <div class="form-actions sticky-actions">
-    <a class="btn btn-light" href="{% url 'espace:links' %}">Annuler</a>
+    <a class="btn btn-light" href="{% url 'dev:dashboard' %}">Annuler</a>
     <button class="btn btn-primary" type="submit" data-confirm-quota><svg class="ic"><use href="#i-link"/></svg> Créer le lien</button>
   </div>
 </form>

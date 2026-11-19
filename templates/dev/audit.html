@@ -2,6 +2,7 @@
 {% block title %}Journal{% endblock %}
 {% block page_title %}Journal de sécurité{% endblock %}
 {% block content %}
+<div class="guide-note"><svg class="ic"><use href="#i-log"/></svg><p><b>À quoi sert cette page ?</b> Toutes les actions sensibles, avec la date et la personne : connexions, liens créés, PDF téléchargés, bracelets désactivés, données vidées. Utile en cas de doute ou de litige.</p></div>
 <form class="search" method="get" role="search"><input type="search" name="q" value="{{ q }}" placeholder="Filtrer (action, personne, détail)…" aria-label="Filtrer"></form>
 <div class="panel table-panel">
   <table class="table rtable">

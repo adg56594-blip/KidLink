@@ -8,11 +8,14 @@ ce qui a été vérifié, rien de plus.
 
 - Serveur identique à la production : `DEBUG` désactivé, HTTPS, gunicorn 3 processus,
   PostgreSQL 16, compteurs anti-abus partagés en base, clés fournies par l'environnement.
-- Comptes de chaque rôle (développeur principal, sous-développeur, administrateur principal,
-  sous-administrateur), double authentification active.
+- Comptes de chaque rôle (développeur principal, sous-développeur, administrateur),
+  double authentification active.
 - Script : [`security/pentest.py`](security/pentest.py) (rejouable, voir en bas).
 
-## Résultat de la campagne d'attaques : 54 vérifications, 0 faille
+## Résultat de la campagne d'attaques : 52 vérifications, 0 faille
+
+Campagne rejouée après la réorganisation des rôles (l'administrateur ne voit plus que « Les gains »,
+les développeurs gèrent tout).
 
 ```
     [OK  ] Config · En-têtes de sécurité HTTP 
@@ -24,26 +27,24 @@ ce qui a été vérifié, rien de plus.
     [OK  ] Config · Méthodes HTTP dangereuses refusées 
     [OK  ] Config · robots.txt interdit l'indexation 
     [INFO] Config · Cookies : Secure + HttpOnly + SameSite — vérifié dans la catégorie Authentification
-    [OK  ] Auth · 22 pages internes inaccessibles sans connexion 
+    [OK  ] Auth · 18 pages internes inaccessibles sans connexion 
     [OK  ] Auth · Mot de passe seul (sans code 2FA) insuffisant 
     [OK  ] Auth · Force brute du code 2FA bloquée (déconnexion après 6 essais) 
     [OK  ] Auth · Rejeu d'un code 2FA déjà utilisé refusé — [True, False]
     [OK  ] Auth · Force brute du mot de passe bloquée (429 après 5 essais) — [200, 200, 200, 200, 200, 429, 429]
     [OK  ] Auth · Usurpation X-Forwarded-For ne contourne pas le blocage — [429, 429, 429]
-    [OK  ] Auth · Pas d'énumération des comptes (message + durée) — existant 98 ms / inconnu 92 ms, réponses identiques=True
-    [OK  ] Auth · Fixation de session impossible (nouvel identifiant à la connexion) — dxy0nx
+    [OK  ] Auth · Pas d'énumération des comptes (message + durée) — existant 114 ms / inconnu 122 ms, réponses identiques=True
+    [OK  ] Auth · Fixation de session impossible (nouvel identifiant à la connexion) — 3zoni7
     [OK  ] Auth · Cookie de session Secure + HttpOnly + SameSite — {'secure': True, 'httponly': True, 'samesite': 'Lax'}
     [OK  ] Auth · Déconnexion forcée par simple lien (GET) impossible — 405
     [OK  ] Auth · Redirection ouverte après connexion impossible — /espace/
     [OK  ] CSRF · 6 actions refusées sans jeton CSRF / depuis un autre site 
     [OK  ] CSRF · Formulaire d'inscription public protégé par CSRF — 403
-    [OK  ] CSRF · API de vérification : sans effet sensible (lecture seule, aucune donnée renvoyée) — {'status': 'valid', 'checked_at': '19/11/2026 à 01:44', 'event': 'Pèlerinage test'}
-    [OK  ] Accès · Sous-admin limité à son rôle (15 tentatives d'élévation) 
-    [OK  ] Accès · Sous-admin sans rôle « inscrits » ne voit pas les enfants 
-    [OK  ] Accès · Administrateur exclu de la console développeur 
-    [OK  ] Accès · Administrateur ne peut pas télécharger un PDF non livré — 403
-    [OK  ] Accès · Aucun QR / code signé visible par l'administrateur 
-    [OK  ] Accès · Purge impossible avant la fin de la durée de conservation — 403
+    [OK  ] CSRF · API de vérification : sans effet sensible (lecture seule, aucune donnée renvoyée) — {'status': 'valid', 'checked_at': '19/11/2026 à 13:42', 'event': 'Pèlerinage test'}
+    [OK  ] Accès · Administrateur (admin@t.bj) : uniquement « Les gains » (23 tentatives) 
+    [OK  ] Accès · Administrateur (sub@t.bj) : uniquement « Les gains » (23 tentatives) 
+    [OK  ] Accès · Page « Les gains » : aucune donnée d'enfant ni de famille 
+    [OK  ] Accès · Développeur principal : effacement possible à tout moment (formulaire affiché) 
     [OK  ] Accès · Identifiant inexistant -> 404 propre (pas d'erreur 500) 
     [OK  ] Accès · Sous-développeur limité à son rôle 
     [INFO] Injection · Formulaire public : charges hostiles acceptées sans erreur (10/10) 
@@ -52,13 +53,13 @@ ce qui a été vérifié, rien de plus.
     [OK  ] Injection · Injection SQL dans la recherche sans effet (ORM paramétré) — 0.1s
     [OK  ] Injection · API de vérification robuste aux entrées malformées 
     [OK  ] Injection · Routes publiques refusent les identifiants malformés — 404/404
-    [OK  ] Injection · Génération PDF avec noms hostiles sans plantage — 112977 octets
+    [OK  ] Injection · Génération PDF avec noms hostiles sans plantage — 112593 octets
     [OK  ] Injection · Nom de fichier PDF assaini (pas d'injection d'en-tête) — attachment; filename="bracelets-pelerinage-test-famille-xss-li.pdf"
     [OK  ] Logique · Course : 30 envois simultanés sur un lien de 5 places — 5 acceptés, codes=[302, 403, 410]
     [OK  ] Logique · Références SK-xxxx uniques sous concurrence (vérif. base ci-dessous) 
     [OK  ] Logique · Quotas absurdes ou incohérents refusés (7 cas) 
     [OK  ] Logique · Devinette de liens d'inscription : rien trouvé (40 essais, 192 bits) 
-    [OK  ] Logique · Invitation utilisée une seule fois même en simultané — [302, 404, 404, 404, 404, 404, 404, 404]
+    [OK  ] Logique · Invitation utilisée une seule fois même en simultané — [404, 404, 302, 404, 404, 404, 404, 404]
     [OK  ] QR · Bracelet authentique reconnu 
     [OK  ] QR · 8 falsifications détectées 
     [OK  ] QR · Signature transplantée sur un autre identifiant détectée 
@@ -66,7 +67,7 @@ ce qui a été vérifié, rien de plus.
     [OK  ] QR · La page du bracelet ne contient aucune donnée (tout est dans le fragment local) 
     [OK  ] DoS · Corps de requête énorme refusé — 400
     [OK  ] DoS · Trop de champs de formulaire refusés — 400
-    [OK  ] DoS · Mot de passe géant ne bloque pas le serveur — 200 en 0.09s
+    [OK  ] DoS · Mot de passe géant ne bloque pas le serveur — 200 en 0.13s
     [OK  ] DoS · Limitation de débit de l'API partagée entre les 3 processus — 59 acceptés puis 429
     [OK  ] DoS · En-têtes HTTP géants refusés — 431
 ```
@@ -79,7 +80,7 @@ Contrôles complémentaires :
 | Mots de passe | Argon2id |
 | Liens d'inscription, invitations | seule une empreinte HMAC-SHA256 est stockée |
 | Secrets 2FA | chiffrés en base |
-| `pytest` (67 tests unitaires et d'intégration) | 67 réussis |
+| `pytest` (66 tests unitaires et d'intégration) | 66 réussis |
 | `bandit` (analyse statique Python) | 0 problème |
 | `pip-audit` (vulnérabilités connues des dépendances) | 0 vulnérabilité |
 | `manage.py check --deploy` | 0 avertissement |
@@ -96,6 +97,7 @@ Contrôles complémentaires :
 | Connexions à la base inutilisables après une coupure | Faible (disponibilité) | `CONN_HEALTH_CHECKS` |
 | Bannière du serveur web (nom et version) | Info | Masquée |
 | Adresses `/i/<jeton>/` écrites dans le journal d'accès | Faible | Journal d'accès gunicorn désactivé |
+| Malléabilité ECDSA : (r, n−s) était accepté par la vérification **hors ligne** (aucune donnée modifiable, rejeté en ligne) | Faible | Signatures « low-S » imposées à la création, côté serveur et dans le téléphone |
 
 ## Risques résiduels connus (à connaître, assumés ou à décider)
 

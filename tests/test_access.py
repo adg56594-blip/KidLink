@@ -10,8 +10,9 @@ from core.models import AuditLog, Invitation, Registration, RegistrationLink, Us
 
 from .conftest import PWD, make_user, staff_client
 
-ESPACE = ["/espace/", "/espace/evenements/", "/espace/liens/", "/espace/documents/", "/espace/equipe/", "/espace/compte/"]
-DEV = ["/dev/", "/dev/livraisons/", "/dev/comptes/", "/dev/equipe/", "/dev/journal/", "/dev/reglages/"]
+ESPACE = ["/espace/", "/espace/compte/"]
+DEV = ["/dev/", "/dev/pelerinages/", "/dev/pelerinages/nouveau/", "/dev/liens/", "/dev/liens/nouveau/", "/dev/bracelets/",
+       "/dev/administrateur/", "/dev/equipe/", "/dev/journal/", "/dev/reglages/"]
 
 
 @pytest.mark.parametrize("url", ESPACE + DEV)
@@ -60,102 +61,80 @@ def test_open_redirect_blocked(client, admin):
     assert "after_otp" not in client.session
 
 
-def test_admin_cannot_enter_dev_console(client, admin):
+def test_admin_only_sees_gains(client, admin, registration):
+    """L'administrateur ne gère rien : uniquement la page « Les gains »."""
     staff_client(client, admin)
-    for url in DEV:
+    page = client.get("/espace/")
+    assert page.status_code == 200
+    body = page.content.decode()
+    assert "Argent encaissé" in body and "3 000 F" in body
+    # Aucune donnée d'enfant, de famille, de QR ou de lien
+    for secret in ["HOUNSOU", "Rosine", "Famille Test", "Payeur", registration.public_id, registration.qr_fragment]:
+        assert secret not in body, secret
+    link = registration.link
+    for url in DEV + [f"/dev/liens/{link.pk}/", f"/dev/liens/{link.pk}/pdf/", f"/dev/pelerinages/{link.event_id}/vider/"]:
         assert client.get(url).status_code == 403, url
+    for url in [f"/dev/liens/{link.pk}/activer/", f"/dev/enfants/{registration.pk}/bracelet/", "/dev/administrateur/inscription/"]:
+        assert client.post(url).status_code == 403, url
 
 
-def test_admin_cannot_download_unreleased_pdf(client, admin, registration):
+def test_admin_has_whatsapp_to_developers(client, admin):
     staff_client(client, admin)
-    link = registration.link
-    assert link.delivery_mode == "hold"
-    assert client.get(f"/espace/documents/{link.pk}/pdf/").status_code == 403
-    page = client.get("/espace/documents/").content.decode()
-    assert f"/espace/documents/{link.pk}/pdf/" not in page
-    # La page d'un lien ne révèle jamais le QR
-    body = client.get(f"/espace/liens/{link.pk}/").content.decode()
-    assert registration.qr_fragment not in body and registration.public_id not in body
+    assert "wa.me/22967324361" in client.get("/espace/").content.decode()
 
 
-def test_released_pdf_downloadable_by_admin(client, admin, registration):
-    link = registration.link
-    link.delivery_mode = "immediate"
-    link.save()
+def test_gains_survive_purge(client, admin, registration):
+    from core.services import purge_event
+
+    purge_event(registration.event)
     staff_client(client, admin)
-    r = client.get(f"/espace/documents/{link.pk}/pdf/")
-    assert r.status_code == 200 and r["Content-Type"] == "application/pdf" and r.content.startswith(b"%PDF")
+    body = client.get("/espace/").content.decode()
+    assert "3 000 F" in body  # montant conservé après l'effacement des enfants
 
 
-def test_delayed_and_scheduled_delivery(registration):
-    link = registration.link
-    link.last_registration_at = timezone.now()
-    link.delivery_mode = "delayed"
-    link.delivery_delay_hours = 2
-    assert not link.is_released
-    link.last_registration_at = timezone.now() - timedelta(hours=3)
-    assert link.is_released
-    link.delivery_mode = "scheduled"
-    link.delivery_scheduled_at = timezone.now() + timedelta(days=1)
-    assert not link.is_released
-    link.delivery_scheduled_at = timezone.now() - timedelta(seconds=1)
-    assert link.is_released
-
-
-def test_dev_controls_delivery(client, lead_dev, registration):
+def test_lead_dev_manages_everything(client, lead_dev, registration):
     staff_client(client, lead_dev)
     link = registration.link
-    assert client.get(f"/dev/livraisons/{link.pk}/pdf/").status_code == 200
-    client.post(f"/dev/livraisons/{link.pk}/", {"action": "save", "mode": "delayed", "delay_hours": "5"})
-    link.refresh_from_db()
-    assert link.delivery_mode == "delayed" and link.delivery_delay_hours == 5
-    client.post(f"/dev/livraisons/{link.pk}/", {"action": "now"})
-    link.refresh_from_db()
-    assert link.delivery_mode == "immediate" and link.is_released
-
-
-def test_sub_admin_limited_to_roles(client, admin, registration):
-    sub = make_user("sub@t.bj", User.ADMIN, roles=["links"])
-    staff_client(client, sub)
-    assert client.get("/espace/liens/nouveau/").status_code == 200
-    assert client.get("/espace/evenements/nouveau/").status_code == 403
-    assert client.get("/espace/equipe/").status_code == 403
-    assert client.get("/espace/documents/").status_code == 403
-    # sans le rôle « inscriptions », la liste des enfants n'apparaît pas
-    body = client.get(f"/espace/liens/{registration.link.pk}/").content.decode()
-    assert "HOUNSOU" not in body
-    assert client.post(f"/espace/bracelets/{registration.pk}/desactiver/").status_code == 403
+    for url in DEV + ["/espace/", f"/dev/liens/{link.pk}/"]:
+        assert client.get(url).status_code == 200, url
+    r = client.get(f"/dev/liens/{link.pk}/pdf/")
+    assert r.status_code == 200 and r.content.startswith(b"%PDF")
+    page = client.get("/dev/").content.decode()
+    assert "Mode d'emploi" in page  # chaque fonction est expliquée
 
 
 def test_sub_dev_limited_to_roles(client, lead_dev, registration):
     sub = make_user("subdev@t.bj", User.DEVELOPER, roles=["audit"])
     staff_client(client, sub)
     assert client.get("/dev/journal/").status_code == 200
-    assert client.get("/dev/livraisons/").status_code == 403
-    assert client.get(f"/dev/livraisons/{registration.link.pk}/pdf/").status_code == 403
+    assert client.get("/dev/bracelets/").status_code == 403
+    assert client.get(f"/dev/liens/{registration.link.pk}/pdf/").status_code == 403
     assert client.get("/dev/equipe/").status_code == 403
-    assert client.get("/espace/liens/").status_code == 403
+    assert client.get("/dev/liens/").status_code == 403
+    assert client.get("/espace/").status_code == 200  # tout développeur peut voir les gains
 
 
-def test_only_principal_admin_creates_sub_admins(client, admin):
-    staff_client(client, admin)
-    r = client.post("/espace/equipe/", {"full_name": "Sœur Esther", "email": "esther@t.bj", "roles": ["links", "documents"]})
+def test_sub_dev_links_only_cannot_see_children(client, lead_dev, registration):
+    sub = make_user("links@t.bj", User.DEVELOPER, roles=["links"])
+    staff_client(client, sub)
+    body = client.get(f"/dev/liens/{registration.link.pk}/").content.decode()
+    assert "HOUNSOU" not in body
+    assert client.post(f"/dev/enfants/{registration.pk}/bracelet/").status_code == 403
+
+
+def test_only_lead_dev_invites_developers_and_roles_are_whitelisted(client, lead_dev):
+    staff_client(client, lead_dev)
+    r = client.post("/dev/equipe/", {"full_name": "Dev 2", "email": "dev2@t.bj", "roles": ["links", "documents"]})
     assert r.status_code == 200 and b"/invitation/" in r.content
-    inv = Invitation.objects.get(email="esther@t.bj")
-    assert inv.kind == "sub_admin" and inv.roles == ["documents", "links"]
-
-
-def test_role_tampering_is_ignored(client, admin):
-    staff_client(client, admin)
-    client.post("/espace/equipe/", {"full_name": "X", "email": "x@t.bj", "roles": ["links", "dev_documents"]})
-    assert not Invitation.objects.filter(email="x@t.bj").exists()  # choix invalide → refusé
+    assert Invitation.objects.get(email="dev2@t.bj").roles == ["documents", "links"]
+    client.post("/dev/equipe/", {"full_name": "X", "email": "x@t.bj", "roles": ["links", "gains", "superuser"]})
+    assert not Invitation.objects.filter(email="x@t.bj").exists()  # rôle inconnu -> refusé
 
 
 def test_principal_admin_signup_flow(client, lead_dev):
     staff_client(client, lead_dev)
-    client.post("/dev/comptes/administrateur-principal/", {"email": "", "full_name": ""})
-    url = client.session.get("principal_invite_url") or ""
-    client.get("/dev/comptes/")  # affiche (et consomme) le lien
+    client.post("/dev/administrateur/inscription/", {"email": "", "full_name": ""})
+    client.get("/dev/administrateur/")  # affiche (et consomme) le lien
     inv = Invitation.objects.get(kind="principal_admin")
     assert inv.usable
     anon = Client()
@@ -174,13 +153,13 @@ def test_principal_admin_signup_flow(client, lead_dev):
     # Lien à usage unique
     assert Client().get(f"/inscription-administrateur/{token}/").status_code == 404
     # Plus aucune nouvelle invitation possible
-    client.post("/dev/comptes/administrateur-principal/", {})
+    client.post("/dev/administrateur/inscription/", {})
     assert Invitation.objects.filter(kind="principal_admin").count() == 1
 
 
 def test_weak_password_rejected(lead_dev):
     token = "tok-" + "b" * 30
-    Invitation.objects.create(kind="sub_admin", email="w@t.bj", roles=["links"], token_hash=crypto.token_hash(token),
+    Invitation.objects.create(kind="sub_dev", email="w@t.bj", roles=["links"], token_hash=crypto.token_hash(token),
                               created_by=lead_dev, expires_at=timezone.now() + timedelta(hours=1))
     r = Client().post(f"/invitation/{token}/", {"full_name": "W", "email": "w@t.bj", "password1": "123456", "password2": "123456"})
     assert r.status_code == 200 and not User.objects.filter(email="w@t.bj").exists()
@@ -188,7 +167,7 @@ def test_weak_password_rejected(lead_dev):
 
 def test_invited_email_cannot_be_changed(lead_dev):
     token = "tok-" + "c" * 30
-    Invitation.objects.create(kind="sub_admin", email="fixe@t.bj", roles=["links"], token_hash=crypto.token_hash(token),
+    Invitation.objects.create(kind="sub_dev", email="fixe@t.bj", roles=["links"], token_hash=crypto.token_hash(token),
                               created_by=lead_dev, expires_at=timezone.now() + timedelta(hours=1))
     Client().post(f"/invitation/{token}/", {"full_name": "F", "email": "autre@t.bj", "password1": "Un-Mot-De-Passe-Long-2026", "password2": "Un-Mot-De-Passe-Long-2026"})
     assert User.objects.filter(email="fixe@t.bj").exists() and not User.objects.filter(email="autre@t.bj").exists()
@@ -196,22 +175,22 @@ def test_invited_email_cannot_be_changed(lead_dev):
 
 def test_expired_invitation(lead_dev):
     token = "tok-" + "d" * 30
-    Invitation.objects.create(kind="sub_admin", email="e@t.bj", token_hash=crypto.token_hash(token),
+    Invitation.objects.create(kind="sub_dev", email="e@t.bj", token_hash=crypto.token_hash(token),
                               created_by=lead_dev, expires_at=timezone.now() - timedelta(seconds=1))
     assert Client().get(f"/invitation/{token}/").status_code == 404
 
 
-def test_link_creation_double_check(client, admin, event):
-    staff_client(client, admin)
+def test_link_creation_double_check(client, lead_dev, event):
+    staff_client(client, lead_dev)
     base = {"event": event.pk, "label": "Paroisse X", "payer_name": "P", "payer_phone": "", "amount_received": 50000,
             "valid_days": 7, "cash_ack": "on"}
-    r = client.post("/espace/liens/nouveau/", {**base, "quota": 50, "quota_confirm": 500})
+    r = client.post("/dev/liens/nouveau/", {**base, "quota": 50, "quota_confirm": 500})
     assert r.status_code == 200 and not RegistrationLink.objects.exists()
-    r = client.post("/espace/liens/nouveau/", {**base, "quota": 500, "quota_confirm": 500})
+    r = client.post("/dev/liens/nouveau/", {**base, "quota": 500, "quota_confirm": 500})
     assert r.status_code == 200 and not RegistrationLink.objects.exists()  # 500 000 F attendus, 50 000 saisis
-    r = client.post("/espace/liens/nouveau/", {**{k: v for k, v in base.items() if k != "cash_ack"}, "quota": 50, "quota_confirm": 50})
+    r = client.post("/dev/liens/nouveau/", {**{k: v for k, v in base.items() if k != "cash_ack"}, "quota": 50, "quota_confirm": 50})
     assert not RegistrationLink.objects.exists()
-    r = client.post("/espace/liens/nouveau/", {**base, "quota": 50, "quota_confirm": 50})
+    r = client.post("/dev/liens/nouveau/", {**base, "quota": 50, "quota_confirm": 50})
     assert r.status_code == 302
     link = RegistrationLink.objects.get()
     page = client.get(r["Location"]).content.decode()
@@ -221,17 +200,19 @@ def test_link_creation_double_check(client, admin, event):
     assert link.quota == 50
 
 
-def test_purge_respects_retention(client, admin, registration):
-    staff_client(client, admin)
+def test_purge_respects_retention(client, lead_dev, registration):
+    sub = make_user("purge@t.bj", User.DEVELOPER, roles=["purge"])
+    staff_client(client, sub)
     ev = registration.event
-    r = client.post(f"/espace/evenements/{ev.pk}/vider/", {"confirm": "VIDER"})
+    r = client.post(f"/dev/pelerinages/{ev.pk}/vider/", {"confirm": "VIDER"})
     assert r.status_code == 403 and Registration.objects.exists()
     ev.ends_on = timezone.localdate() - timedelta(days=40)
     ev.starts_on = ev.ends_on
     ev.save()
-    client.post(f"/espace/evenements/{ev.pk}/vider/", {"confirm": "VIDER"})
+    client.post(f"/dev/pelerinages/{ev.pk}/vider/", {"confirm": "VIDER"})
     ev.refresh_from_db()
     assert ev.is_purged and ev.purged_registrations == 1 and not Registration.objects.exists()
+    assert ev.purged_amount == 3000 and ev.purged_places == 3 and ev.purged_links == 1
 
 
 def test_auto_purge_command(registration):

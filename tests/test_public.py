@@ -119,7 +119,7 @@ def test_api_verify_states(client, registration):
 
 
 def test_api_verify_after_purge_reports_expired(client, registration):
-    from core.views.espace import purge_event
+    from core.services import purge_event
 
     rid, frag = registration.public_id, registration.qr_fragment
     purge_event(registration.event)

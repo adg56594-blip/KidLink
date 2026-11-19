@@ -1,4 +1,4 @@
-{% extends "espace/base.html" %}
+{% extends "dev/base.html" %}
 {% block title %}Événement{% endblock %}
 {% block crumb %}Événements{% endblock %}
 {% block page_title %}{% if ev %}Modifier l'événement{% else %}Nouvel événement{% endif %}{% endblock %}
@@ -30,7 +30,7 @@
     {% include "partials/field.html" with field=form.is_published %}
   </div>
   <div class="form-actions">
-    <a class="btn btn-light" href="{% url 'espace:events' %}">Annuler</a>
+    <a class="btn btn-light" href="{% url 'dev:events' %}">Annuler</a>
     <button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-check"/></svg> Enregistrer</button>
   </div>
 </form>

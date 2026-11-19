@@ -1,32 +1,25 @@
 """Rôles et droits.
 
-- Développeur principal : accès total, crée les sous-développeurs.
+- Développeur principal : accès total, nomme les sous-développeurs.
 - Sous-développeur : uniquement les rôles cochés par le développeur principal.
-- Administrateur principal : tous les rôles administrateur, seul à créer des sous-admins.
-- Sous-administrateur : uniquement les rôles cochés par l'administrateur principal.
-
-Un administrateur n'a JAMAIS accès aux QR codes ni aux PDF tant que les
-développeurs ne les ont pas livrés.
+- Administrateur : NE GÈRE RIEN. Il voit seulement la page « Les gains »
+  (argent encaissé, nombre d'enfants) et contacte les développeurs par WhatsApp.
+  Il ne voit aucune donnée d'enfant, aucun QR code, aucun PDF.
 """
 
-ADMIN_ROLES = {
-    "events": "Gérer les événements",
-    "links": "Créer et gérer les liens d'inscription",
-    "registrations": "Voir la liste des inscrits",
-    "documents": "Télécharger les PDF livrés",
-    "purge": "Vider les données d'un événement terminé",
-}
-
 DEV_ROLES = {
-    "deliveries": "Décider de l'envoi des PDF à l'administration",
-    "dev_documents": "Télécharger tous les PDF des bracelets",
-    "accounts": "Gérer les comptes administrateurs",
+    "events": "Gérer les pèlerinages (dates, prix, affichage sur l'accueil)",
+    "links": "Créer les liens d'inscription après un paiement",
+    "registrations": "Voir les enfants inscrits et désactiver un bracelet perdu",
+    "documents": "Télécharger les PDF des bracelets à imprimer",
+    "purge": "Vider les données d'un pèlerinage terminé",
+    "accounts": "Gérer le compte de l'administrateur",
     "audit": "Consulter le journal de sécurité",
-    "settings": "Modifier les réglages de la plateforme",
+    "settings": "Modifier les réglages (numéros affichés, texte du bracelet)",
 }
 
-# Un sous-développeur peut aussi recevoir des droits de l'espace administration.
-DEV_ASSIGNABLE = {**DEV_ROLES, **ADMIN_ROLES}
+# Le seul « rôle » de l'administrateur : regarder les gains.
+GAINS = "gains"
 
 
 def clean_roles(values, allowed):

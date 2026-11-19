@@ -1,18 +1,19 @@
 {% extends "dev/base.html" %}
-{% block title %}Administrateurs{% endblock %}
-{% block page_title %}Comptes administrateurs{% endblock %}
+{% block title %}Compte administrateur{% endblock %}
+{% block page_title %}Compte administrateur{% endblock %}
 {% block content %}
+<div class="guide-note"><svg class="ic"><use href="#i-users"/></svg><p><b>À quoi sert cette page ?</b> L'administrateur ne gère rien sur le site : il voit seulement la page « Les gains » (argent encaissé, nombre d'enfants) depuis son téléphone. Ici, vous créez son accès, vous le suspendez, ou vous réinitialisez son code de sécurité s'il a changé de téléphone.</p></div>
 {% if invite_url %}
 <section class="newlink">
-  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Page d'inscription de l'administrateur prête</h2><p>Valable 48 h, une seule fois. Elle ne sera plus affichée.</p></div></div>
+  <div class="nl-head"><span class="badge-ok"><svg class="ic"><use href="#i-check"/></svg></span><div><h2>Lien d'inscription de l'administrateur prêt</h2><p>Valable 48 h, une seule fois. Elle ne sera plus affichée.</p></div></div>
   <div class="copy-row"><input id="pa-link" readonly value="{{ invite_url }}" aria-label="Lien"><button class="btn btn-light" type="button" data-copy="#pa-link"><svg class="ic"><use href="#i-copy"/></svg> Copier</button></div>
   <a class="btn btn-wa" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ admin_wa }}?text={% filter urlencode %}Bonjour, voici votre page d'inscription d'administrateur Sèmè Kids (valable 48 h, une seule fois) : {{ invite_url }}{% endfilter %}"><svg class="ic"><use href="#i-wa"/></svg> Envoyer à l'administrateur</a>
 </section>
 {% endif %}
-{% if not has_principal %}
+{% if not has_admin %}
 <section class="panel">
-  <h2>Créer la page d'inscription de l'administrateur principal</h2>
-  <p class="muted">Seule la personne qui reçoit ce lien pourra devenir administrateur principal. Ensuite, elle seule créera les sous-administrateurs.</p>
+  <h2>Créer l'accès de l'administrateur</h2>
+  <p class="muted">Générez un lien d'inscription à usage unique (valable 48 h) et envoyez-le-lui sur WhatsApp. Il choisira son mot de passe et configurera son code de sécurité.</p>
   <form method="post" action="{% url 'dev:principal_invite' %}" class="grid3 align-end">
     {% csrf_token %}
     <div class="field"><label for="pa-name">Nom (facultatif)</label><input id="pa-name" name="full_name" maxlength="120"></div>
@@ -23,7 +24,7 @@
 </section>
 {% endif %}
 <section class="panel">
-  <h2>Administrateurs</h2>
+  <h2>Administrateur</h2>
   {% if admins %}
   <ul class="people">
   {% for a in admins %}

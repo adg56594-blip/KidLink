@@ -10,20 +10,21 @@ l'administration encaisse elle-même, puis génère un lien d'inscription.
 ## Fonctionnement
 
 1. **Paiement** : la famille ou le chargé de paroisse paie l'administration (espèces, Mobile Money…).
-2. **Lien** : l'administrateur crée un lien pour le nombre exact d'enfants payés. Il saisit le nombre deux fois, le montant est contrôlé, et il doit cocher une confirmation. Le lien est ensuite envoyé par WhatsApp.
+2. **Lien** : un développeur crée un lien pour le nombre exact d'enfants payés. Il saisit le nombre deux fois, le montant est contrôlé, et il doit cocher une confirmation. Le lien est ensuite envoyé par WhatsApp.
 3. **Inscription** : la famille remplit une fiche courte par enfant : nom, prénom, parent, numéro, paroisse. Le chargé est facultatif et il n'y a pas de photo. Pour l'enfant suivant, la famille est déjà pré-remplie. Le lien se ferme tout seul une fois le quota atteint.
-4. **QR et PDF** : le QR code signé est généré automatiquement. Le PDF d'impression (A4, 20 bracelets par page, QR de 40 mm, nom en dessous) n'est visible **ni par le client ni par l'administrateur** tant que les développeurs ne l'ont pas livré. Ils choisissent pour chaque lot : immédiat, différé de X heures, programmé, ou retenu.
+4. **QR et PDF** : le QR code signé est généré automatiquement. Les développeurs téléchargent le PDF d'impression (A4, 20 bracelets par page, QR de 40 mm, nom et référence SK-0001 en dessous) et l'envoient à l'imprimeur. Ni le client ni l'administrateur n'y ont accès.
 5. **Scan** : un passant scanne le bracelet. La page affiche le nom de l'enfant et un gros bouton « Appeler la famille », plus WhatsApp avec sa position. La signature est vérifiée **dans le téléphone**, puis confirmée en ligne si le réseau est disponible.
-6. **Effacement** : après la fin de l'événement et la durée de conservation choisie, l'administrateur vide les données. Une commande nocturne sert de filet de sécurité.
+6. **Effacement** : après la fin de l'événement et la durée de conservation choisie, un développeur vide les données (les montants restent sur « Les gains »). Une commande nocturne sert de filet de sécurité.
 
 ## Rôles
 
 | Compte | Ce qu'il peut faire |
 |---|---|
-| Développeur principal | Tout. Crée les sous-développeurs, génère la page d'inscription de l'administrateur principal, décide de la livraison des PDF. |
-| Sous-développeur | Uniquement les droits cochés : livraisons, PDF, comptes, journal, réglages, et éventuellement des droits d'administration. |
-| Administrateur principal | Inscrit via une page spéciale à usage unique. Gère les événements, les liens, les inscrits, les PDF livrés et les purges. **Seul** à créer des sous-administrateurs. |
-| Sous-administrateur | Uniquement les droits cochés par l'administrateur principal. |
+| Développeur principal | **Tout** : pèlerinages, liens après paiement, enfants inscrits, PDF des bracelets, effacement des données, compte de l'administrateur, équipe technique, journal, réglages. |
+| Sous-développeur | Uniquement les droits cochés par le développeur principal. |
+| Administrateur | **Ne gère rien.** Une seule page, « Les gains » : argent encaissé, nombre de paiements et d'enfants, par pèlerinage, et un bouton WhatsApp vers les développeurs. Il ne voit aucun nom, aucun QR code, aucun PDF. Il reste le contact des parents sur le site public. |
+
+Le tableau de bord des développeurs contient un **mode d'emploi** qui explique chaque fonction.
 
 ## Sécurité
 

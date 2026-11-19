@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from core.models import AuditLog, Event
-from core.views.espace import purge_event
+from core.services import purge_event
 
 
 class Command(BaseCommand):

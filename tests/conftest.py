@@ -49,12 +49,12 @@ def event(db, admin):
 
 @pytest.fixture
 def link_factory(db, event, admin):
-    def make(quota=3, mode="hold", token=None):
+    def make(quota=3, token=None):
         token = token or crypto.new_token(24)
         link = RegistrationLink.objects.create(
             event=event, label="Famille Test", payer_name="Payeur", quota=quota, amount_received=quota * 1000,
             token_hash=crypto.token_hash(token), token_hint=token[-4:], expires_at=timezone.now() + timedelta(days=3),
-            created_by=admin, delivery_mode=mode,
+            created_by=admin,
         )
         link.raw_token = token
         return link

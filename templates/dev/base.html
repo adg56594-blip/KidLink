@@ -1,22 +1,26 @@
 {% extends "base.html" %}{% load static %}
-{% block body_class %}page-app theme-dev{% endblock %}
+{% block body_class %}page-app{% endblock %}
 {% block body %}
-<div class="app">
+<div class="app has-tabbar">
   <aside class="sidebar" id="sidebar">
     <div class="side-rainbow" aria-hidden="true"></div>
     <a class="side-brand" href="{% url 'dev:dashboard' %}">
-      <img src="{% static 'img/seme2026-emblem.webp' %}" alt="" width="44" height="46">
-      <span><strong>Sèmè <span>Kids</span></strong><small>Console technique</small></span>
+      <img src="{% static 'img/seme2026-emblem.webp' %}" alt="" width="66" height="44">
+      <span><strong>Sèmè <span>Kids</span></strong><small>Gestion</small></span>
     </a>
     <nav class="side-nav" aria-label="Menu">
-      <a href="{% url 'dev:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg>Vue d'ensemble</a>
-      {% if can.deliveries or can.dev_documents %}<a href="{% url 'dev:deliveries' %}" {% if nav == 'deliveries' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-send"/></svg>Livraison des PDF</a>{% endif %}
-      {% if can.accounts %}<a href="{% url 'dev:accounts' %}" {% if nav == 'accounts' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-users"/></svg>Administrateurs</a>{% endif %}
+      <a href="{% url 'dev:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg>Tableau de bord</a>
+      {% if can.links %}<a href="{% url 'dev:link_new' %}" {% if nav == 'new' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-cash"/></svg>Nouveau paiement</a>{% endif %}
+      {% if can.links or can.registrations or can.documents %}<a href="{% url 'dev:links' %}" {% if nav == 'links' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-link"/></svg>Liens &amp; inscrits</a>{% endif %}
+      {% if can.documents %}<a href="{% url 'dev:bracelets' %}" {% if nav == 'bracelets' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-doc"/></svg>Bracelets à imprimer</a>{% endif %}
+      {% if can.events or can.purge %}<a href="{% url 'dev:events' %}" {% if nav == 'events' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-cal"/></svg>Pèlerinages</a>{% endif %}
+      <a href="{% url 'espace:gains' %}"><svg class="ic"><use href="#i-cash"/></svg>Page « Les gains »</a>
+      <p class="side-sep">Administration technique</p>
+      {% if can.accounts %}<a href="{% url 'dev:accounts' %}" {% if nav == 'accounts' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-users"/></svg>Compte administrateur</a>{% endif %}
       {% if request.user.is_lead_dev %}<a href="{% url 'dev:team' %}" {% if nav == 'team' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-code"/></svg>Équipe technique</a>{% endif %}
       {% if can.audit %}<a href="{% url 'dev:audit' %}" {% if nav == 'audit' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-log"/></svg>Journal de sécurité</a>{% endif %}
       {% if can.settings %}<a href="{% url 'dev:settings' %}" {% if nav == 'settings' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-gear"/></svg>Réglages</a>{% endif %}
       <a href="{% url 'dev:account' %}" {% if nav == 'account' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-lock"/></svg>Mon compte</a>
-      {% if can.events or can.links or can.registrations or can.documents %}<a href="{% url 'espace:dashboard' %}"><svg class="ic"><use href="#i-cal"/></svg>Espace administration</a>{% endif %}
     </nav>
     <div class="side-user">
       <span class="avatar">{{ request.user.full_name|slice:":1"|upper }}</span>
@@ -27,7 +31,7 @@
   <div class="app-main">
     <header class="app-top">
       <button class="icon-btn menu-btn" type="button" data-toggle-menu aria-controls="sidebar" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
-      <div class="app-title"><p class="crumb">{% block crumb %}Console développeur{% endblock %}</p><h1>{% block page_title %}{% endblock %}</h1></div>
+      <div class="app-title"><p class="crumb">{% block crumb %}Espace des développeurs{% endblock %}</p><h1>{% block page_title %}{% endblock %}</h1></div>
       <div class="app-actions">{% block actions %}{% endblock %}</div>
     </header>
     {% include "partials/messages.html" %}
@@ -36,4 +40,11 @@
   </div>
 </div>
 <div class="scrim" data-toggle-menu></div>
+<nav class="tabbar" aria-label="Menu principal">
+  <a href="{% url 'dev:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg><span>Accueil</span></a>
+  {% if can.links or can.registrations or can.documents %}<a href="{% url 'dev:links' %}" {% if nav == 'links' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-link"/></svg><span>Liens</span></a>{% endif %}
+  {% if can.links %}<a class="tab-main" href="{% url 'dev:link_new' %}" aria-label="Nouveau paiement"><svg class="ic"><use href="#i-plus"/></svg><span>Paiement</span></a>{% endif %}
+  {% if can.documents %}<a href="{% url 'dev:bracelets' %}" {% if nav == 'bracelets' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-doc"/></svg><span>Bracelets</span></a>{% endif %}
+  <button type="button" data-toggle-menu><svg class="ic"><use href="#i-menu"/></svg><span>Plus</span></button>
+</nav>
 {% endblock %}

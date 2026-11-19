@@ -1,16 +1,16 @@
 {% extends "auth/_layout.html" %}
 {% block title %}Inscription de l'administrateur{% endblock %}
-{% block side_quote %}Vous êtes la personne de confiance de Sèmè Kids.<span>Administrateur principal</span>{% endblock %}
+{% block side_quote %}Suivez les gains de Sèmè Kids depuis votre téléphone.<span>Administrateur</span>{% endblock %}
 {% block auth %}
 <div class="auth-card wide">
   <p class="kicker"><span class="dot"></span> Invitation unique</p>
-  <h1>Créez le compte de l'administrateur principal</h1>
-  <p class="muted">Ce compte encaisse les paiements, crée les liens d'inscription et nomme les sous-administrateurs. Ce lien ne fonctionne qu'une seule fois.</p>
+  <h1>Créez votre accès administrateur</h1>
+  <p class="muted">Votre espace est très simple : vous voyez l'argent encaissé et le nombre d'enfants inscrits, et vous écrivez aux développeurs sur WhatsApp en un geste. Les développeurs s'occupent de tout le reste.</p>
   <ul class="perks">
-    <li><svg class="ic"><use href="#i-cal"/></svg> Créer les événements (pèlerinages)</li>
-    <li><svg class="ic"><use href="#i-link"/></svg> Générer les liens après paiement</li>
-    <li><svg class="ic"><use href="#i-users"/></svg> Nommer des sous-administrateurs</li>
-    <li><svg class="ic"><use href="#i-doc"/></svg> Recevoir les PDF des bracelets</li>
+    <li><svg class="ic"><use href="#i-cash"/></svg> Voir l'argent encaissé</li>
+    <li><svg class="ic"><use href="#i-child"/></svg> Voir le nombre d'enfants</li>
+    <li><svg class="ic"><use href="#i-wa"/></svg> Écrire aux développeurs</li>
+    <li><svg class="ic"><use href="#i-lock"/></svg> Accès protégé par un code</li>
   </ul>
   <form method="post" novalidate>
     {% csrf_token %}

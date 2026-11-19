@@ -1,133 +1,217 @@
-"""Console des développeurs."""
+"""Console des développeurs : ils gèrent TOUT (l'administrateur ne fait que regarder les gains)."""
 from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
-from ..forms import DeliveryForm, InviteForm, RolesForm, SettingsForm
-from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, SiteSettings, User
-from ..roles import DEV_ASSIGNABLE, clean_roles
+from ..forms import EventForm, InviteForm, LinkForm, PurgeForm, RolesForm, SettingsForm, link_expiry
+from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, User
+from ..roles import DEV_ROLES, clean_roles
 from ..security import lead_dev_required, role_required, two_factor_paused_until
+from ..services import pdf_response, purge_event
 from ..utils import audit
-from .espace import pdf_response
 
 
 def ctx(nav, **extra):
     return {"nav": nav, **extra}
 
 
+def live_links():
+    return RegistrationLink.objects.filter(event__purged_at__isnull=True)
+
+
+# ================================================================== tableau de bord
 def dashboard(request):
     now = timezone.now()
-    links = RegistrationLink.objects.filter(event__purged_at__isnull=True).annotate(n=Count("registrations"))
-    pending = [l for l in links if l.n and not l.is_released]
+    links = live_links()
+    totals = links.aggregate(q=Sum("quota"), a=Sum("amount_received"))
+    filled = Registration.objects.filter(event__purged_at__isnull=True).count()
+    places = totals["q"] or 0
     checks = [
         ("Mode production (DEBUG désactivé)", not settings.DEBUG),
         ("Clé de chiffrement fournie par l'environnement", bool(settings.KIDLINK_FIELD_KEYS)),
         ("Clé de signature fournie par l'environnement", bool(settings.KIDLINK_SIGNING_KEY)),
         ("Adresse publique en HTTPS", settings.KIDLINK_PUBLIC_URL.startswith("https://")),
         ("Double authentification active (pas de pause de test)", not two_factor_paused_until()),
-        ("Administrateur principal créé", User.objects.filter(kind=User.ADMIN, is_principal=True).exists()),
+        ("Compte administrateur créé", User.objects.filter(kind=User.ADMIN, is_principal=True).exists()),
     ]
     data = {
-        "registrations": Registration.objects.count(),
-        "pending": pending[:8],
-        "pending_count": len(pending),
-        "forged_week": ScanLog.objects.filter(result=ScanLog.FORGED, created_at__gte=now - timedelta(days=7)).count(),
+        "featured": Event.featured().annotate(n=Count("registrations")).first(),
+        "places": places,
+        "filled": filled,
+        "pending": max(places - filled, 0),
+        "fill_pct": round(100 * filled / places) if places else 0,
+        "cash": totals["a"] or 0,
+        "links_active": links.filter(is_active=True).count(),
+        "recent_links": links.select_related("event").annotate(n=Count("registrations"))[:5],
         "scans_week": ScanLog.objects.filter(created_at__gte=now - timedelta(days=7)).count(),
+        "forged_week": ScanLog.objects.filter(result=ScanLog.FORGED, created_at__gte=now - timedelta(days=7)).count(),
         "checks": checks,
         "fingerprint": crypto.public_key_fingerprint(),
-        "events": Event.featured().count(),
-        "recent": AuditLog.objects.select_related("actor")[:8] if request.user.has_role("audit") else [],
     }
     return render(request, "dev/dashboard.html", ctx("dashboard", **data))
 
 
-# ------------------------------------------------------------------ livraisons
-@role_required("deliveries", "dev_documents")
-def deliveries(request):
-    qs = RegistrationLink.objects.select_related("event").annotate(n=Count("registrations")).filter(event__purged_at__isnull=True)
-    f = request.GET.get("f", "pending")
-    rows = list(qs)
-    if f == "pending":
-        rows = [l for l in rows if l.n and not l.is_released]
-    elif f == "released":
-        rows = [l for l in rows if l.is_released]
-    return render(request, "dev/deliveries.html", ctx("deliveries", rows=rows, f=f, modes=SiteSettings.DELIVERY_MODES))
+# ================================================================== pèlerinages
+@role_required("events", "purge")
+def events(request):
+    evs = Event.objects.annotate(n=Count("registrations"), nl=Count("links", distinct=True))
+    return render(request, "dev/events.html", ctx("events", events=evs, today=timezone.localdate()))
 
 
-@role_required("deliveries")
+@role_required("events")
 @require_http_methods(["GET", "POST"])
-def delivery_edit(request, pk):
-    link = get_object_or_404(RegistrationLink.objects.select_related("event"), pk=pk, event__purged_at__isnull=True)
-    initial = {
-        "mode": link.delivery_mode,
-        "delay_hours": link.delivery_delay_hours,
-        "scheduled_at": timezone.localtime(link.delivery_scheduled_at).strftime("%Y-%m-%dT%H:%M") if link.delivery_scheduled_at else None,
-    }
-    form = DeliveryForm(request.POST or None, initial=initial)
+def event_edit(request, pk=None):
+    ev = get_object_or_404(Event, pk=pk, purged_at__isnull=True) if pk else None
+    form = EventForm(request.POST or None, instance=ev)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        if not ev:
+            obj.created_by = request.user
+        obj.save()
+        audit(request, "event_saved", f"{obj.pk} · {obj.title}")
+        messages.success(request, "Pèlerinage enregistré.")
+        return redirect("dev:events")
+    return render(request, "dev/event_form.html", ctx("events", form=form, ev=ev))
+
+
+@role_required("purge")
+@require_http_methods(["GET", "POST"])
+def event_purge(request, pk):
+    ev = get_object_or_404(Event, pk=pk, purged_at__isnull=True)
+    allowed = ev.retention_over or request.user.is_lead_dev
+    form = PurgeForm(request.POST or None)
     if request.method == "POST":
-        if request.POST.get("action") == "now":
-            link.delivery_mode = SiteSettings.IMMEDIATE
-            link.delivery_updated_by = request.user
-            link.save(update_fields=["delivery_mode", "delivery_updated_by"])
-            audit(request, "delivery_released", str(link.pk))
-            messages.success(request, "PDF livré à l'administration.")
-            return redirect("dev:deliveries")
+        if not allowed:
+            raise PermissionDenied
         if form.is_valid():
-            d = form.cleaned_data
-            link.delivery_mode = d["mode"]
-            if d.get("delay_hours"):
-                link.delivery_delay_hours = d["delay_hours"]
-            link.delivery_scheduled_at = d.get("scheduled_at") if d["mode"] == SiteSettings.SCHEDULED else None
-            link.delivery_updated_by = request.user
-            link.save(update_fields=["delivery_mode", "delivery_delay_hours", "delivery_scheduled_at", "delivery_updated_by"])
-            audit(request, "delivery_updated", f"{link.pk} · {link.get_delivery_mode_display()}")
-            messages.success(request, "Règle d'envoi enregistrée.")
-            return redirect("dev:deliveries")
-    return render(request, "dev/delivery_edit.html", ctx("deliveries", link=link, form=form))
+            n = purge_event(ev, request.user)
+            audit(request, "event_purged", f"{ev.pk} · {ev.title} · {n} inscription(s) effacée(s)")
+            messages.success(request, f"Données effacées : {n} inscription(s).")
+            return redirect("dev:events")
+    return render(request, "dev/event_purge.html", ctx("events", ev=ev, form=form, allowed=allowed, count=ev.registrations.count()))
 
 
-@role_required("deliveries")
+# ================================================================== liens d'inscription
+@role_required("links", "registrations", "documents")
+def links(request):
+    qs = live_links().select_related("event").annotate(n=Count("registrations"))
+    q = request.GET.get("q", "").strip()[:60]
+    if q:
+        qs = qs.filter(Q(label__icontains=q) | Q(event__title__icontains=q))
+    return render(request, "dev/links.html", ctx("links", links=qs, q=q))
+
+
+@role_required("links")
+@require_http_methods(["GET", "POST"])
+def link_create(request):
+    form = LinkForm(request.POST or None)
+    if not form.fields["event"].queryset.exists():
+        messages.warning(request, "Créez d'abord le pèlerinage.")
+        return redirect("dev:events")
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        token = crypto.new_token(24)
+        link = RegistrationLink.objects.create(
+            event=d["event"], label=d["label"], payer_name=d["payer_name"], payer_phone=d["payer_phone"],
+            quota=d["quota"], amount_received=d["amount_received"],
+            token_hash=crypto.token_hash(token), token_hint=token[-4:],
+            expires_at=link_expiry(d["valid_days"]), created_by=request.user,
+        )
+        audit(request, "link_created", f"{link.pk} · {link.label} · {link.quota} place(s) · {link.amount_received} F")
+        request.session[f"newlink_{link.pk}"] = token
+        return redirect("dev:link_detail", pk=link.pk)
+    prices = {str(e.pk): e.price_per_child for e in form.fields["event"].queryset}
+    return render(request, "dev/link_form.html", ctx("new", form=form, prices=prices))
+
+
+@role_required("links", "registrations", "documents")
+def link_detail(request, pk):
+    link = get_object_or_404(live_links().select_related("event", "created_by"), pk=pk)
+    token = request.session.pop(f"newlink_{link.pk}", None) if request.user.has_role("links") else None
+    url = f"{settings.KIDLINK_PUBLIC_URL}/i/{token}/" if token else None
+    regs = list(link.registrations.all()) if request.user.has_role("registrations") else None
+    share = None
+    if url:
+        share = (
+            f"Bonjour {link.payer_name}, voici votre lien Sèmè Kids pour inscrire {link.quota} enfant(s) "
+            f"au {link.event.title} : {url}  Remplissez une fiche par enfant. Ce lien est personnel, ne le partagez pas."
+        )
+    return render(request, "dev/link_detail.html", ctx("links", link=link, url=url, share=share, regs=regs))
+
+
+@role_required("links")
 @require_POST
-def deliveries_bulk(request):
-    ids = [int(i) for i in request.POST.getlist("ids") if i.isdigit()][:500]
-    mode = request.POST.get("mode")
-    if mode not in dict(SiteSettings.DELIVERY_MODES) or mode == SiteSettings.SCHEDULED:
-        messages.error(request, "Choix invalide.")
-        return redirect("dev:deliveries")
-    n = RegistrationLink.objects.filter(pk__in=ids, event__purged_at__isnull=True).update(delivery_mode=mode, delivery_updated_by=request.user)
-    audit(request, "delivery_bulk", f"{n} lot(s) → {mode}")
-    messages.success(request, f"{n} lot(s) mis à jour.")
-    return redirect("dev:deliveries")
+def link_toggle(request, pk):
+    link = get_object_or_404(live_links(), pk=pk)
+    link.is_active = not link.is_active
+    link.save(update_fields=["is_active"])
+    audit(request, "link_toggled", f"{link.pk} · actif={link.is_active}")
+    messages.success(request, "Lien réactivé." if link.is_active else "Lien désactivé : plus personne ne peut l'utiliser.")
+    return redirect("dev:link_detail", pk=pk)
 
 
-@role_required("dev_documents")
+@role_required("links")
+@require_POST
+def link_regenerate(request, pk):
+    link = get_object_or_404(live_links(), pk=pk)
+    token = crypto.new_token(24)
+    link.token_hash = crypto.token_hash(token)
+    link.token_hint = token[-4:]
+    link.expires_at = max(link.expires_at, link_expiry(3))
+    link.save(update_fields=["token_hash", "token_hint", "expires_at"])
+    audit(request, "link_regenerated", str(link.pk))
+    request.session[f"newlink_{link.pk}"] = token
+    messages.success(request, "Nouveau lien créé. L'ancien ne fonctionne plus.")
+    return redirect("dev:link_detail", pk=pk)
+
+
+@role_required("registrations")
+@require_POST
+def registration_revoke(request, pk):
+    reg = get_object_or_404(Registration, pk=pk, event__purged_at__isnull=True)
+    reg.revoked_at = None if reg.revoked_at else timezone.now()
+    reg.save(update_fields=["revoked_at"])
+    audit(request, "bracelet_revoked" if reg.revoked_at else "bracelet_restored", reg.public_id)
+    messages.success(request, "Bracelet désactivé." if reg.revoked_at else "Bracelet réactivé.")
+    return redirect("dev:link_detail", pk=reg.link_id)
+
+
+# ================================================================== bracelets (PDF)
+@role_required("documents")
+def bracelets(request):
+    rows = live_links().select_related("event").annotate(n=Count("registrations")).filter(n__gt=0)
+    return render(request, "dev/bracelets.html", ctx("bracelets", rows=rows))
+
+
+@role_required("documents")
 def pdf_download(request, pk):
-    link = get_object_or_404(RegistrationLink.objects.select_related("event"), pk=pk, event__purged_at__isnull=True)
+    link = get_object_or_404(live_links().select_related("event"), pk=pk)
     return pdf_response(link, request)
 
 
-# ------------------------------------------------------------------ comptes administrateurs
+# ================================================================== compte de l'administrateur
 @role_required("accounts")
 def accounts(request):
     admins = User.objects.filter(kind=User.ADMIN).order_by("-is_principal", "full_name")
-    has_principal = admins.filter(is_principal=True).exists()
+    has_admin = admins.filter(is_principal=True).exists()
     invites = Invitation.objects.filter(kind=Invitation.PRINCIPAL_ADMIN, used_at__isnull=True, revoked=False, expires_at__gt=timezone.now())
     url = request.session.pop("principal_invite_url", None)
-    return render(request, "dev/accounts.html", ctx("accounts", admins=admins, has_principal=has_principal, invites=invites, invite_url=url))
+    return render(request, "dev/accounts.html", ctx("accounts", admins=admins, has_admin=has_admin, invites=invites, invite_url=url))
 
 
 @role_required("accounts")
 @require_POST
 def principal_invite(request):
     if User.objects.filter(kind=User.ADMIN, is_principal=True).exists():
-        messages.error(request, "L'administrateur principal existe déjà.")
+        messages.error(request, "Le compte administrateur existe déjà.")
         return redirect("dev:accounts")
     Invitation.objects.filter(kind=Invitation.PRINCIPAL_ADMIN, used_at__isnull=True).update(revoked=True)
     token = crypto.new_token(32)
@@ -165,13 +249,13 @@ def account_action(request, pk):
     return redirect("dev:accounts")
 
 
-# ------------------------------------------------------------------ équipe développeurs
+# ================================================================== équipe technique
 @lead_dev_required
 @require_http_methods(["GET", "POST"])
 def team(request):
     members = User.objects.filter(kind=User.DEVELOPER, is_principal=False).order_by("full_name")
     invites = Invitation.objects.filter(kind=Invitation.SUB_DEV, used_at__isnull=True, revoked=False, expires_at__gt=timezone.now())
-    form = InviteForm(request.POST or None, role_choices=DEV_ASSIGNABLE)
+    form = InviteForm(request.POST or None, role_choices=DEV_ROLES)
     invite_url = None
     if request.method == "POST" and form.is_valid():
         token = crypto.new_token(24)
@@ -179,14 +263,14 @@ def team(request):
             kind=Invitation.SUB_DEV,
             email=form.cleaned_data["email"],
             full_name=form.cleaned_data["full_name"],
-            roles=clean_roles(form.cleaned_data["roles"], DEV_ASSIGNABLE),
+            roles=clean_roles(form.cleaned_data["roles"], DEV_ROLES),
             token_hash=crypto.token_hash(token),
             created_by=request.user,
             expires_at=timezone.now() + timedelta(hours=72),
         )
         audit(request, "subdev_invited", form.cleaned_data["email"])
         invite_url = f"{settings.KIDLINK_PUBLIC_URL}/invitation/{token}/"
-        form = InviteForm(role_choices=DEV_ASSIGNABLE)
+        form = InviteForm(role_choices=DEV_ROLES)
     return render(request, "dev/team.html", ctx("team", members=members, invites=invites, form=form, invite_url=invite_url))
 
 
@@ -194,14 +278,14 @@ def team(request):
 @require_http_methods(["GET", "POST"])
 def team_member(request, pk):
     member = get_object_or_404(User, pk=pk, kind=User.DEVELOPER, is_principal=False)
-    form = RolesForm(request.POST or None, role_choices=DEV_ASSIGNABLE, initial={"roles": member.roles})
+    form = RolesForm(request.POST or None, role_choices=DEV_ROLES, initial={"roles": member.roles})
     if request.method == "POST":
         if request.POST.get("action") == "toggle":
             member.is_active = not member.is_active
             member.save(update_fields=["is_active"])
             audit(request, "subdev_toggled", f"{member.email} actif={member.is_active}")
         elif form.is_valid():
-            member.roles = clean_roles(form.cleaned_data["roles"], DEV_ASSIGNABLE)
+            member.roles = clean_roles(form.cleaned_data["roles"], DEV_ROLES)
             member.save(update_fields=["roles"])
             audit(request, "subdev_roles", f"{member.email} : {', '.join(member.roles)}")
         messages.success(request, "Modifications enregistrées.")
@@ -216,10 +300,10 @@ def invite_revoke(request, pk):
     inv.revoked = True
     inv.save(update_fields=["revoked"])
     audit(request, "invite_revoked", inv.email or inv.kind)
-    return redirect(request.POST.get("back") == "accounts" and "dev:accounts" or "dev:team")
+    return redirect("dev:accounts" if inv.kind == Invitation.PRINCIPAL_ADMIN else "dev:team")
 
 
-# ------------------------------------------------------------------ journal & réglages
+# ================================================================== journal & réglages
 @role_required("audit")
 def audit_log(request):
     qs = AuditLog.objects.all()
@@ -233,8 +317,9 @@ def audit_log(request):
 @role_required("settings")
 @require_http_methods(["GET", "POST"])
 def site_settings(request):
-    s = SiteSettings.get()
-    form = SettingsForm(request.POST or None, instance=s)
+    from ..models import SiteSettings
+
+    form = SettingsForm(request.POST or None, instance=SiteSettings.get())
     if request.method == "POST" and form.is_valid():
         form.save()
         audit(request, "settings_updated")

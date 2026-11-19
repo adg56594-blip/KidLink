@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from .fields import EncryptedTextField
-from .roles import ADMIN_ROLES, DEV_ROLES
+from .roles import DEV_ROLES, GAINS
 
 CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"  # sans 0/O, 1/I/L, U : lisible à l'oral
 
@@ -83,20 +83,19 @@ class User(AbstractBaseUser):
     def has_role(self, role: str) -> bool:
         if not self.is_active:
             return False
-        if self.is_lead_dev:
-            return True
-        if self.is_principal_admin:
-            return role in ADMIN_ROLES
         if self.is_admin:
-            return role in ADMIN_ROLES and role in self.roles
+            return role == GAINS  # l'administrateur ne fait que regarder les gains
+        if self.is_lead_dev or role == GAINS:
+            return True
         return role in self.roles  # sous-développeur
 
     @property
     def role_labels(self):
-        if self.is_principal:
+        if self.is_lead_dev:
             return ["Tous les droits"]
-        labels = {**DEV_ROLES, **ADMIN_ROLES}
-        return [labels[r] for r in self.roles if r in labels]
+        if self.is_admin:
+            return ["Voir les gains"]
+        return [DEV_ROLES[r] for r in self.roles if r in DEV_ROLES]
 
     @property
     def title(self):
@@ -104,9 +103,7 @@ class User(AbstractBaseUser):
             return "Développeur principal"
         if self.is_developer:
             return "Développeur"
-        if self.is_principal_admin:
-            return "Administrateur principal"
-        return "Sous-administrateur"
+        return "Administrateur"
 
 
 class Invitation(models.Model):
@@ -114,12 +111,10 @@ class Invitation(models.Model):
 
     LEAD_DEV = "lead_dev"
     PRINCIPAL_ADMIN = "principal_admin"
-    SUB_ADMIN = "sub_admin"
     SUB_DEV = "sub_dev"
     KINDS = [
         (LEAD_DEV, "Développeur principal"),
-        (PRINCIPAL_ADMIN, "Administrateur principal"),
-        (SUB_ADMIN, "Sous-administrateur"),
+        (PRINCIPAL_ADMIN, "Administrateur"),
         (SUB_DEV, "Sous-développeur"),
     ]
     kind = models.CharField(max_length=20, choices=KINDS)
@@ -140,13 +135,6 @@ class Invitation(models.Model):
 
 # ===================================================================== réglages
 class SiteSettings(models.Model):
-    IMMEDIATE, DELAYED, SCHEDULED, HOLD = "immediate", "delayed", "scheduled", "hold"
-    DELIVERY_MODES = [
-        (IMMEDIATE, "Immédiat"),
-        (DELAYED, "Différé"),
-        (SCHEDULED, "Programmé"),
-        (HOLD, "Retenu (envoi manuel)"),
-    ]
     admin_phone = models.CharField("téléphone de l'administrateur", max_length=30, default="+229 98 18 47 59")
     admin_whatsapp = models.CharField("WhatsApp de l'administrateur", max_length=30, default="+229 98 18 47 59")
     dev_whatsapp = models.CharField("WhatsApp du développeur", max_length=30, default="+229 67 32 43 61")
@@ -154,8 +142,6 @@ class SiteSettings(models.Model):
     bracelet_line = models.CharField(
         "ligne d'urgence imprimée sous le QR", max_length=40, blank=True, default="Urgence : +229 98 18 47 59"
     )
-    default_delivery_mode = models.CharField(max_length=12, choices=DELIVERY_MODES, default=HOLD)
-    default_delay_hours = models.PositiveIntegerField(default=24)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod
@@ -180,6 +166,10 @@ class Event(models.Model):
     purged_at = models.DateTimeField(null=True, blank=True)
     purged_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     purged_registrations = models.PositiveIntegerField(default=0)
+    # Chiffres conservés après l'effacement des données (pour la page « Les gains »)
+    purged_amount = models.PositiveIntegerField(default=0)
+    purged_places = models.PositiveIntegerField(default=0)
+    purged_links = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-starts_on"]
@@ -231,11 +221,6 @@ class RegistrationLink(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_registration_at = models.DateTimeField(null=True, blank=True)
 
-    # Livraison des PDF : réglée UNIQUEMENT par les développeurs.
-    delivery_mode = models.CharField(max_length=12, choices=SiteSettings.DELIVERY_MODES, default=SiteSettings.HOLD)
-    delivery_delay_hours = models.PositiveIntegerField(default=24)
-    delivery_scheduled_at = models.DateTimeField(null=True, blank=True)
-    delivery_updated_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
 
     class Meta:
         ordering = ["-created_at"]
@@ -275,24 +260,6 @@ class RegistrationLink(models.Model):
         if not self.event.registrations_open:
             return "Inscriptions closes"
         return "Actif"
-
-    @property
-    def release_at(self):
-        """Moment où l'administration peut télécharger le PDF (None = jamais pour l'instant)."""
-        if not self.last_registration_at:
-            return None
-        if self.delivery_mode == SiteSettings.IMMEDIATE:
-            return self.last_registration_at
-        if self.delivery_mode == SiteSettings.DELAYED:
-            return self.last_registration_at + timedelta(hours=self.delivery_delay_hours)
-        if self.delivery_mode == SiteSettings.SCHEDULED:
-            return self.delivery_scheduled_at
-        return None
-
-    @property
-    def is_released(self):
-        r = self.release_at
-        return r is not None and r <= timezone.now()
 
 
 class Registration(models.Model):

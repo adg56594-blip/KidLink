@@ -1,0 +1,39 @@
+{% extends "espace/base.html" %}{% load kl %}
+{% block title %}Les gains{% endblock %}
+{% block content %}
+<section class="gain-hero">
+  <p class="gain-label">Argent encaissé au total</p>
+  <p class="gain-total">{{ total|fcfa }}</p>
+  <div class="gain-mini">
+    <div><b>{{ payments }}</b><span>paiement{{ payments|pluralize }}</span></div>
+    <div><b>{{ places }}</b><span>enfant{{ places|pluralize }} payé{{ places|pluralize }}</span></div>
+    <div><b>{{ kids }}</b><span>déjà inscrit{{ kids|pluralize }}</span></div>
+  </div>
+</section>
+
+<a class="btn btn-call btn-xl btn-block" target="_blank" rel="noopener noreferrer" href="https://wa.me/{{ dev_wa }}?text={{ 'Bonjour, je voudrais parler des bracelets Sèmè Kids.'|urlencode }}">
+  <svg class="ic"><use href="#i-wa"/></svg><span><b>Écrire aux développeurs</b><small>WhatsApp {{ dev_wa_pretty }}</small></span></a>
+
+<section class="panel">
+  <h2>Par pèlerinage</h2>
+  {% for r in rows %}
+  <article class="gain-ev">
+    <div class="gain-ev-top"><strong>{{ r.ev.title }}</strong><b>{{ r.amount|fcfa }}</b></div>
+    <p class="muted">{{ r.ev.starts_on|date:"j F Y" }} · {{ r.links }} paiement{{ r.links|pluralize }} · {{ r.kids }} / {{ r.places }} enfant{{ r.places|pluralize }} inscrit{{ r.kids|pluralize }}</p>
+    <progress max="100" value="{{ r.pct }}">{{ r.pct }} %</progress>
+  </article>
+  {% empty %}
+  <p class="muted">Aucun pèlerinage pour l'instant.</p>
+  {% endfor %}
+</section>
+
+{% if recent %}
+<section class="panel">
+  <h2>Derniers paiements</h2>
+  <ul class="gain-list">
+    {% for l in recent %}<li><span>{{ l.created_at|date:"j M" }}<small>{{ l.quota }} enfant{{ l.quota|pluralize }}</small></span><b>{{ l.amount_received|fcfa }}</b></li>{% endfor %}
+  </ul>
+  <p class="help">Par discrétion, les noms des familles et des enfants ne sont pas affichés ici.</p>
+</section>
+{% endif %}
+{% endblock %}

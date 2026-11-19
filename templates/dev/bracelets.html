@@ -1,0 +1,19 @@
+{% extends "dev/base.html" %}{% load kl %}
+{% block title %}Bracelets à imprimer{% endblock %}
+{% block page_title %}Bracelets à imprimer{% endblock %}
+{% block content %}
+<div class="guide-note"><svg class="ic"><use href="#i-doc"/></svg><p><b>À quoi sert cette page ?</b> Un PDF par paiement, prêt pour l'imprimeur : 20 bracelets par page A4 (QR code, nom, référence SK-0001). Demandez une impression <b>à 100 %</b>, sans « ajuster à la page ». Les bracelets désactivés ne sont pas imprimés.</p></div>
+{% if rows %}
+<ul class="lcards">
+  {% for l in rows %}
+  <li><div class="lcard">
+    <span class="doc-ic"><svg class="ic"><use href="#i-doc"/></svg></span>
+    <span class="lc-main"><strong>{{ l.label }}</strong><small>{{ l.event.title }} · {{ l.n }} bracelet{{ l.n|pluralize }} sur {{ l.quota }} payé{{ l.quota|pluralize }}</small></span>
+    <a class="btn btn-primary btn-sm" href="{% url 'dev:pdf' l.pk %}"><svg class="ic"><use href="#i-doc"/></svg> PDF</a>
+  </div></li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="panel empty"><svg class="ic"><use href="#i-doc"/></svg><p>Aucun bracelet pour l'instant. Les PDF apparaissent dès qu'une famille a rempli au moins une fiche.</p></div>
+{% endif %}
+{% endblock %}

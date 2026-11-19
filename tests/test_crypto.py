@@ -96,3 +96,16 @@ def test_keys_can_be_derived_from_railway_secrets(settings):
         settings.KIDLINK_FIELD_KEYS = settings.KIDLINK_SIGNING_KEY = ""
         for f in (c._fernet, c._signing_key, c._pepper):
             f.cache_clear()
+
+
+def test_signature_malleability_rejected(db):
+    """(r, n - s) est mathématiquement valide : on l'interdit (signatures « low-S » uniquement)."""
+    from core.crypto import P256_N
+
+    f = build_fragment("ABCDEFGHJKMN", datetime.date(2027, 1, 1), DATA)
+    p64, s64 = f.split(".")
+    raw = crypto.b64u_decode(s64)
+    r, s = raw[:32], int.from_bytes(raw[32:], "big")
+    assert s <= P256_N // 2  # signature produite en forme canonique
+    flipped = crypto.b64u(r + (P256_N - s).to_bytes(32, "big"))
+    assert not verify_fragment("ABCDEFGHJKMN", p64 + "." + flipped).ok

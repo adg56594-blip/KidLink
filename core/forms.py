@@ -5,7 +5,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 
-from .models import Event, RegistrationLink, SiteSettings, User
+from .models import Event, SiteSettings, User
 from .utils import normalize_phone
 
 CTRL = re.compile(r"[\x00-\x1f\x7f<>]")
@@ -242,25 +242,10 @@ class DateTimeInput(forms.DateTimeInput):
     input_type = "datetime-local"
 
 
-class DeliveryForm(forms.Form):
-    mode = forms.ChoiceField(label="Envoi du PDF à l'administration", choices=SiteSettings.DELIVERY_MODES)
-    delay_hours = forms.IntegerField(label="Délai (heures)", min_value=1, max_value=24 * 60, required=False)
-    scheduled_at = forms.DateTimeField(label="Date et heure d'envoi", required=False, widget=DateTimeInput(format="%Y-%m-%dT%H:%M"), input_formats=["%Y-%m-%dT%H:%M"])
-
-    def clean(self):
-        d = super().clean()
-        if d.get("mode") == SiteSettings.DELAYED and not d.get("delay_hours"):
-            self.add_error("delay_hours", "Indiquez le délai.")
-        if d.get("mode") == SiteSettings.SCHEDULED:
-            if not d.get("scheduled_at"):
-                self.add_error("scheduled_at", "Indiquez la date d'envoi.")
-        return d
-
-
 class SettingsForm(forms.ModelForm):
     class Meta:
         model = SiteSettings
-        fields = ["admin_phone", "admin_whatsapp", "dev_whatsapp", "dev_name", "bracelet_line", "default_delivery_mode", "default_delay_hours"]
+        fields = ["admin_phone", "admin_whatsapp", "dev_whatsapp", "dev_name", "bracelet_line"]
 
     def clean(self):
         d = super().clean()

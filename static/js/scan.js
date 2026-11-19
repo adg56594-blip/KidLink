@@ -97,6 +97,9 @@
 
   async function verifyLocal(id, payload, sig) {
     if (!(window.crypto && crypto.subtle)) return null; // impossible de vérifier (ancien navigateur)
+    // Signature « low-S » obligatoire (anti-malléabilité) : s <= n/2
+    var sHex = Array.prototype.map.call(sig.slice(32), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    if (sHex > '7fffffff800000007fffffffffffffffde737d56d38bcf4279dce5617e3192a8') return false;
     try {
       var key = await crypto.subtle.importKey('spki', b64Bytes(root.dataset.pk), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
       var msg = new TextEncoder().encode('KL1|' + id + '|' + payload);
@@ -159,5 +162,7 @@
     if (res.status === 'forged') return bad('Bracelet FALSIFIÉ', 'Ce code n\'a pas été produit par Sèmè Kids. Les numéros pourraient être faux. Appelez l\'administration.');
     if (local === true) seal('offline', 'Bracelet authentique', 'Signature vérifiée dans ce téléphone');
   }
+  // Un autre code collé dans la même page : on recommence toute la vérification.
+  window.addEventListener('hashchange', function () { location.reload(); });
   run();
 })();

@@ -1,54 +1,17 @@
 {% extends "base.html" %}{% load static %}
-{% block body_class %}page-app{% endblock %}
+{% block body_class %}page-app page-owner{% endblock %}
 {% block body %}
-<div class="app has-tabbar">
-  <aside class="sidebar" id="sidebar">
-    <div class="side-rainbow" aria-hidden="true"></div>
-    <a class="side-brand" href="{% url 'espace:dashboard' %}">
-      <img src="{% static 'img/seme2026-emblem.webp' %}" alt="" width="44" height="46">
-      <span><strong>Sèmè <span>Kids</span></strong><small>Administration</small></span>
-    </a>
-    <nav class="side-nav" aria-label="Menu">
-      <a href="{% url 'espace:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg>Tableau de bord</a>
-      {% with u=request.user %}
-      {% if can.events or can.purge %}
-      <a href="{% url 'espace:events' %}" {% if nav == 'events' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-cal"/></svg>Événements</a>{% endif %}
-      {% if can.links or can.registrations or can.documents %}
-      <a href="{% url 'espace:links' %}" {% if nav == 'links' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-link"/></svg>Liens d'inscription</a>{% endif %}
-      {% if can.documents %}
-      <a href="{% url 'espace:documents' %}" {% if nav == 'documents' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-doc"/></svg>Documents PDF</a>{% endif %}
-      {% if u.is_principal_admin %}
-      <a href="{% url 'espace:team' %}" {% if nav == 'team' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-users"/></svg>Mon équipe</a>{% endif %}
-      <a href="{% url 'espace:account' %}" {% if nav == 'account' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-gear"/></svg>Mon compte</a>
-      {% if u.is_developer %}<a href="{% url 'dev:dashboard' %}"><svg class="ic"><use href="#i-code"/></svg>Console développeur</a>{% endif %}
-      {% endwith %}
-    </nav>
-    <div class="side-user">
-      <span class="avatar">{{ request.user.full_name|slice:":1"|upper }}</span>
-      <div><strong>{{ request.user.full_name }}</strong><small>{{ request.user.title }}</small></div>
-      <form method="post" action="{% url 'auth:logout' %}">{% csrf_token %}<button class="icon-btn" type="submit" title="Se déconnecter" aria-label="Se déconnecter"><svg class="ic"><use href="#i-out"/></svg></button></form>
-    </div>
-  </aside>
-  <div class="app-main">
-    <header class="app-top">
-      <button class="icon-btn menu-btn" type="button" data-toggle-menu aria-controls="sidebar" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
-      <div class="app-title">
-        <p class="crumb">{% block crumb %}Espace administration{% endblock %}</p>
-        <h1>{% block page_title %}{% endblock %}</h1>
-      </div>
-      <div class="app-actions">{% block actions %}{% endblock %}</div>
-    </header>
-    {% include "partials/messages.html" %}
-    {% if twofa_paused_until %}<div class="pause-banner" role="alert"><svg class="ic"><use href="#i-alert"/></svg><span><b>Mode test</b> · code de sécurité désactivé jusqu'au {{ twofa_paused_until|date:"j M à H:i" }}</span></div>{% endif %}
-    <div class="app-content" id="main">{% block content %}{% endblock %}</div>
-  </div>
-</div>
-<div class="scrim" data-toggle-menu></div>
-<nav class="tabbar" aria-label="Menu principal">
-  <a href="{% url 'espace:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg><span>Accueil</span></a>
-  {% if can.links or can.registrations or can.documents %}<a href="{% url 'espace:links' %}" {% if nav == 'links' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-link"/></svg><span>Liens</span></a>{% endif %}
-  {% if can.links %}<a class="tab-main" href="{% url 'espace:link_new' %}" aria-label="Nouveau lien après paiement"><svg class="ic"><use href="#i-plus"/></svg><span>Paiement</span></a>{% endif %}
-  {% if can.documents %}<a href="{% url 'espace:documents' %}" {% if nav == 'documents' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-doc"/></svg><span>Bracelets</span></a>{% endif %}
-  <button type="button" data-toggle-menu {% if nav == 'events' or nav == 'team' or nav == 'account' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-menu"/></svg><span>Plus</span></button>
+<header class="owner-top">
+  <a class="brand" href="{% url 'espace:gains' %}"><img src="{% static 'img/seme2026-emblem.webp' %}" alt="" width="66" height="44"><span class="brand-txt"><strong>Sèmè <span>Kids</span></strong><small>{{ request.user.full_name }}</small></span></a>
+  <form method="post" action="{% url 'auth:logout' %}">{% csrf_token %}<button class="btn btn-light btn-sm" type="submit"><svg class="ic"><use href="#i-out"/></svg><span>Sortir</span></button></form>
+</header>
+{% include "partials/messages.html" %}
+{% if twofa_paused_until %}<div class="pause-banner" role="alert"><svg class="ic"><use href="#i-alert"/></svg><span><b>Mode test</b> · code de sécurité désactivé jusqu'au {{ twofa_paused_until|date:"j M à H:i" }}</span></div>{% endif %}
+<main class="owner-main" id="main">
+  {% block page_head %}{% endblock %}
+  {% block content %}{% endblock %}
+</main>
+<nav class="owner-links">
+  <a href="{% url 'espace:gains' %}">Les gains</a> · <a href="{% url 'espace:account' %}">Mon mot de passe</a>{% if request.user.is_developer %} · <a href="{% url 'dev:dashboard' %}">Espace des développeurs</a>{% endif %}
 </nav>
 {% endblock %}
