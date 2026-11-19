@@ -39,3 +39,23 @@ def pdf_response(link, request):
     resp["Cache-Control"] = "no-store, private"
     audit(request, "pdf_downloaded", f"{link.pk} · {regs.count()} bracelet(s)")
     return resp
+
+
+def reset_all_data(user=None):
+    """Efface TOUTES les données d'exploitation : pèlerinages, liens/paiements, enfants, scans.
+    Conservés : comptes, réglages, journal de sécurité (qui garde la trace de cet effacement)."""
+    from .models import Event, Invitation, Registration, RegistrationLink
+
+    with transaction.atomic():
+        counts = {
+            "pelerinages": Event.objects.count(),
+            "paiements": RegistrationLink.objects.count(),
+            "enfants": Registration.objects.count(),
+            "scans": ScanLog.objects.count(),
+        }
+        ScanLog.objects.all().delete()
+        Registration.objects.all().delete()
+        RegistrationLink.objects.all().delete()
+        Event.objects.all().delete()
+        Invitation.objects.filter(used_at__isnull=True).exclude(kind=Invitation.LEAD_DEV).update(revoked=True)
+    return counts

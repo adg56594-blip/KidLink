@@ -67,6 +67,12 @@
     f.addEventListener('submit', function (e) { if (!confirm(f.getAttribute('data-confirm'))) e.preventDefault(); });
   });
 
+  // Dernière confirmation avant l'effacement total
+  var rb = document.querySelector('[data-confirm-reset]');
+  if (rb) rb.form.addEventListener('submit', function (e) {
+    if (!confirm('DERNIÈRE CONFIRMATION\n\nTout effacer définitivement ? Cette action est irréversible.')) e.preventDefault();
+  });
+
   // Menu mobile
   document.querySelectorAll('[data-toggle-menu]').forEach(function (b) {
     b.addEventListener('click', function () { document.body.classList.toggle('menu-open'); });

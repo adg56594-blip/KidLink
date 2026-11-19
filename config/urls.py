@@ -49,6 +49,7 @@ dev_patterns = [
     path("invitations/<int:pk>/annuler/", dev.invite_revoke, name="invite_revoke"),
     path("journal/", dev.audit_log, name="audit"),
     path("reglages/", dev.site_settings, name="settings"),
+    path("vider-donnees-de-test/", dev.reset_data, name="reset_data"),
     path("compte/", auth.change_password, name="account"),
 ]
 

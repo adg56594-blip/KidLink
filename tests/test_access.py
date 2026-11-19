@@ -200,19 +200,105 @@ def test_link_creation_double_check(client, lead_dev, event):
     assert link.quota == 50
 
 
+def fresh_code(user):
+    """Code TOTP valide et jamais utilisé (le dernier utilisé est oublié pour le test)."""
+    import time
+
+    import pyotp
+
+    from .conftest import SECRET
+
+    User.objects.filter(pk=user.pk).update(totp_last_step=0)
+    return pyotp.TOTP(SECRET).at(int(time.time()))
+
+
 def test_purge_respects_retention(client, lead_dev, registration):
     sub = make_user("purge@t.bj", User.DEVELOPER, roles=["purge"])
     staff_client(client, sub)
     ev = registration.event
-    r = client.post(f"/dev/pelerinages/{ev.pk}/vider/", {"confirm": "VIDER"})
+    r = client.post(f"/dev/pelerinages/{ev.pk}/vider/", {"confirm": "VIDER", "password": PWD, "code": fresh_code(sub)})
     assert r.status_code == 403 and Registration.objects.exists()
     ev.ends_on = timezone.localdate() - timedelta(days=40)
     ev.starts_on = ev.ends_on
     ev.save()
+    # sans mot de passe / avec un mauvais code : rien n'est effacé
     client.post(f"/dev/pelerinages/{ev.pk}/vider/", {"confirm": "VIDER"})
+    client.post(f"/dev/pelerinages/{ev.pk}/vider/", {"confirm": "VIDER", "password": PWD, "code": "000000"})
+    ev.refresh_from_db()
+    assert not ev.is_purged and Registration.objects.exists()
+    client.post(f"/dev/pelerinages/{ev.pk}/vider/", {"confirm": "VIDER", "password": PWD, "code": fresh_code(sub)})
     ev.refresh_from_db()
     assert ev.is_purged and ev.purged_registrations == 1 and not Registration.objects.exists()
     assert ev.purged_amount == 3000 and ev.purged_places == 3 and ev.purged_links == 1
+
+
+RESET_URL = "/dev/vider-donnees-de-test/"
+
+
+def reset_payload(user, children=1, **over):
+    from core.forms import RESET_PHRASE
+
+    d = {"understand_all": "on", "understand_bracelets": "on", "understand_test": "on", "children": children,
+         "phrase": RESET_PHRASE, "password": PWD, "code": fresh_code(user)}
+    d.update(over)
+    return {k: v for k, v in d.items() if v is not None}
+
+
+def test_reset_data_only_for_lead_dev(client, lead_dev, admin, registration):
+    every_role = make_user("all@t.bj", User.DEVELOPER, roles=["events", "links", "registrations", "documents", "purge", "accounts", "audit", "settings"])
+    for u in (every_role, admin):
+        c = Client()
+        staff_client(c, u)
+        assert c.get(RESET_URL).status_code == 403
+        assert c.post(RESET_URL, reset_payload(u)).status_code == 403
+    assert Registration.objects.count() == 1
+
+
+@pytest.mark.parametrize("bad", [
+    {"password": "mauvais-mot-de-passe"}, {"code": "123456"}, {"code": None}, {"children": 5},
+    {"phrase": "effacer"}, {"understand_test": None}, {"understand_all": None},
+])
+def test_reset_data_refused_without_every_answer(client, lead_dev, registration, bad):
+    staff_client(client, lead_dev)
+    r = client.post(RESET_URL, reset_payload(lead_dev, **bad))
+    assert r.status_code == 200 and Registration.objects.count() == 1 and RegistrationLink.objects.exists()
+    assert AuditLog.objects.filter(action="reauth_failed").exists()
+
+
+def test_reset_data_three_failures_logout(client, lead_dev, registration):
+    staff_client(client, lead_dev)
+    for _ in range(3):
+        client.post(RESET_URL, reset_payload(lead_dev, password="faux"))
+    r = client.post(RESET_URL, reset_payload(lead_dev))  # même avec les bonnes réponses : bloqué
+    assert r.status_code == 302 and "/connexion/" in r["Location"]
+    assert Registration.objects.count() == 1
+    assert client.get("/dev/").status_code == 302  # déconnecté
+
+
+def test_reset_data_success(client, lead_dev, admin, registration):
+    from core.models import Event, ScanLog, SiteSettings
+
+    staff_client(client, lead_dev)
+    page = client.get(RESET_URL).content.decode()
+    assert "Vider les données de test" in page
+    r = client.post(RESET_URL, reset_payload(lead_dev))
+    assert r.status_code == 302
+    assert not Event.objects.exists() and not RegistrationLink.objects.exists() and not Registration.objects.exists() and not ScanLog.objects.exists()
+    assert User.objects.filter(pk__in=[lead_dev.pk, admin.pk]).count() == 2 and SiteSettings.objects.exists()
+    assert AuditLog.objects.filter(action="all_data_reset").exists()
+    c = Client()
+    staff_client(c, admin)
+    assert "0 F" in c.get("/espace/").content.decode()  # gains remis à zéro
+
+
+def test_reset_code_cannot_be_replayed(client, lead_dev, registration):
+    staff_client(client, lead_dev)
+    code = fresh_code(lead_dev)
+    client.post(RESET_URL, reset_payload(lead_dev, children=99, code=code))  # code consommé ? non : refus avant
+    payload = reset_payload(lead_dev, code=code)
+    User.objects.filter(pk=lead_dev.pk).update(totp_last_step=10**12)  # le code a déjà servi
+    client.post(RESET_URL, payload)
+    assert Registration.objects.count() == 1
 
 
 def test_auto_purge_command(registration):

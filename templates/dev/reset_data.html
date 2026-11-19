@@ -1,0 +1,38 @@
+{% extends "dev/base.html" %}{% load kl %}
+{% block title %}Vider les données de test{% endblock %}
+{% block crumb %}Zone dangereuse · développeur principal uniquement{% endblock %}
+{% block page_title %}Vider les données de test{% endblock %}
+{% block content %}
+<div class="panel narrow danger-panel">
+  <svg class="ic big"><use href="#i-alert"/></svg>
+  <h2>Effacement total et définitif</h2>
+  <p>Cette action remet le site à zéro, comme au premier jour. À utiliser <b>uniquement</b> pour effacer des essais, jamais pendant un vrai pèlerinage.</p>
+  <div class="reset-sum">
+    <div><b>{{ summary.pelerinages }}</b><span>pèlerinage{{ summary.pelerinages|pluralize }}</span></div>
+    <div><b>{{ summary.paiements }}</b><span>paiement{{ summary.paiements|pluralize }}</span></div>
+    <div class="hot"><b>{{ summary.enfants }}</b><span>enfant{{ summary.enfants|pluralize }} inscrit{{ summary.enfants|pluralize }}</span></div>
+    <div><b>{{ summary.argent|fcfa }}</b><span>de gains affichés</span></div>
+  </div>
+  <p class="ok-line"><svg class="ic"><use href="#i-check"/></svg> Sont conservés : les comptes (développeurs, administrateur), les réglages et le journal de sécurité.</p>
+
+  <form method="post" novalidate class="reset-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="warn-box" role="alert"><svg class="ic"><use href="#i-alert"/></svg><div>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div></div>{% endif %}
+    <h3><span class="num">1</span> Vous avez bien compris ?</h3>
+    {% include "partials/field.html" with field=form.understand_all %}
+    {% include "partials/field.html" with field=form.understand_bracelets %}
+    {% include "partials/field.html" with field=form.understand_test %}
+    <h3><span class="num">2</span> Vérification</h3>
+    {% include "partials/field.html" with field=form.children %}
+    {% include "partials/field.html" with field=form.phrase %}
+    <h3><span class="num">3</span> Prouvez que c'est bien vous</h3>
+    {% include "partials/field.html" with field=form.password %}
+    {% if form.code %}{% include "partials/field.html" with field=form.code %}{% endif %}
+    <p class="help">Après 3 essais ratés, vous serez déconnecté automatiquement. Chaque tentative est inscrite au journal de sécurité.</p>
+    <div class="form-actions">
+      <a class="btn btn-light" href="{% url 'dev:dashboard' %}">Annuler</a>
+      <button class="btn btn-danger" type="submit" data-confirm-reset><svg class="ic"><use href="#i-alert"/></svg> Tout effacer définitivement</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

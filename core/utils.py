@@ -29,6 +29,11 @@ def rate_limited(key: str, limit: int, window: int) -> bool:
     return n > limit
 
 
+def rate_count(key: str) -> int:
+    """Lit un compteur sans l'augmenter."""
+    return cache.get("rl:" + crypto.token_hash(key)[:40]) or 0
+
+
 def reset_rate(key: str):
     cache.delete("rl:" + crypto.token_hash(key)[:40])
 

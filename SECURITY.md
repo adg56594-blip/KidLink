@@ -80,7 +80,7 @@ Contrôles complémentaires :
 | Mots de passe | Argon2id |
 | Liens d'inscription, invitations | seule une empreinte HMAC-SHA256 est stockée |
 | Secrets 2FA | chiffrés en base |
-| `pytest` (66 tests unitaires et d'intégration) | 66 réussis |
+| `pytest` (77 tests unitaires et d'intégration) | 77 réussis |
 | `bandit` (analyse statique Python) | 0 problème |
 | `pip-audit` (vulnérabilités connues des dépendances) | 0 vulnérabilité |
 | `manage.py check --deploy` | 0 avertissement |
@@ -98,6 +98,17 @@ Contrôles complémentaires :
 | Bannière du serveur web (nom et version) | Info | Masquée |
 | Adresses `/i/<jeton>/` écrites dans le journal d'accès | Faible | Journal d'accès gunicorn désactivé |
 | Malléabilité ECDSA : (r, n−s) était accepté par la vérification **hors ligne** (aucune donnée modifiable, rejeté en ligne) | Faible | Signatures « low-S » imposées à la création, côté serveur et dans le téléphone |
+
+## Actions destructrices : double vérification
+
+- **Vider un pèlerinage** : phrase « VIDER » + mot de passe + code de sécurité à 6 chiffres.
+- **Vider toutes les données de test** : réservé au **développeur principal** ; 3 cases de
+  compréhension, question (nombre exact d'enfants qui seront effacés), phrase à recopier,
+  mot de passe + code de sécurité, puis confirmation finale.
+- Un code n'est consommé que si toutes les autres réponses sont justes ; un code déjà utilisé
+  est refusé. **3 échecs en 15 minutes = déconnexion** et blocage ; chaque tentative est journalisée.
+- Effet : un pirate qui aurait volé une session ouverte (sans le mot de passe ni le téléphone)
+  ne peut rien effacer.
 
 ## Risques résiduels connus (à connaître, assumés ou à décider)
 

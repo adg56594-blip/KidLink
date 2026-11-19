@@ -20,6 +20,7 @@
       {% if request.user.is_lead_dev %}<a href="{% url 'dev:team' %}" {% if nav == 'team' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-code"/></svg>Équipe technique</a>{% endif %}
       {% if can.audit %}<a href="{% url 'dev:audit' %}" {% if nav == 'audit' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-log"/></svg>Journal de sécurité</a>{% endif %}
       {% if can.settings %}<a href="{% url 'dev:settings' %}" {% if nav == 'settings' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-gear"/></svg>Réglages</a>{% endif %}
+      {% if request.user.is_lead_dev %}<a class="side-danger" href="{% url 'dev:reset_data' %}" {% if nav == 'reset' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-alert"/></svg>Vider les données de test</a>{% endif %}
       <a href="{% url 'dev:account' %}" {% if nav == 'account' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-lock"/></svg>Mon compte</a>
     </nav>
     <div class="side-user">

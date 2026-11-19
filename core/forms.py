@@ -169,13 +169,86 @@ class EventForm(forms.ModelForm):
         return d
 
 
-class PurgeForm(forms.Form):
+class ReauthForm(forms.Form):
+    """Avant toute suppression : on redemande le mot de passe ET le code de sécurité.
+    Un pirate qui aurait volé une session ouverte ne peut donc rien effacer."""
+
+    password = forms.CharField(label="Votre mot de passe", strip=False, widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))
+    code = forms.CharField(
+        label="Votre code de sécurité (6 chiffres)", max_length=6, required=False,
+        widget=forms.TextInput(attrs={"inputmode": "numeric", "autocomplete": "one-time-code", "pattern": "[0-9]{6}"}),
+    )
+
+    def __init__(self, *a, user=None, **kw):
+        super().__init__(*a, **kw)
+        from .security import two_factor_paused_until
+
+        self.user = user
+        self.needs_code = bool(user and user.totp_confirmed and not two_factor_paused_until())
+        if not self.needs_code:
+            del self.fields["code"]
+
+    def clean(self):
+        from .views.auth import _check_totp
+
+        d = super().clean()
+        if self.errors:
+            return d  # on ne consomme pas le code si une autre réponse est fausse
+        if not self.user or not self.user.check_password(d.get("password") or ""):
+            raise forms.ValidationError("Mot de passe ou code incorrect.")
+        if self.needs_code:
+            code = re.sub(r"\D", "", d.get("code") or "")
+            step = _check_totp(self.user, self.user.totp_secret, code) if len(code) == 6 else None
+            if not step:
+                raise forms.ValidationError("Mot de passe ou code incorrect.")
+            self.user.totp_last_step = step  # le code ne pourra pas resservir
+            self.user.save(update_fields=["totp_last_step"])
+        return d
+
+
+class PurgeForm(ReauthForm):
     confirm = forms.CharField(label="Tapez VIDER pour confirmer", max_length=10)
+    field_order = ["confirm", "password", "code"]
 
     def clean_confirm(self):
         if self.cleaned_data["confirm"].strip().upper() != "VIDER":
             raise forms.ValidationError("Tapez exactement VIDER.")
         return "VIDER"
+
+
+RESET_PHRASE = "EFFACER LES DONNÉES DE TEST"
+
+
+class ResetDataForm(ReauthForm):
+    """Effacement de TOUTES les données d'exploitation (réservé au développeur principal)."""
+
+    understand_all = forms.BooleanField(
+        label="Je comprends que tous les pèlerinages, paiements, enfants inscrits et scans seront effacés pour toujours.", required=True)
+    understand_bracelets = forms.BooleanField(
+        label="Je comprends que les bracelets déjà imprimés afficheront « expiré » et que les gains repartiront à zéro.", required=True)
+    understand_test = forms.BooleanField(
+        label="Je confirme qu'il s'agit de données de TEST et qu'aucun vrai pèlerinage n'est en cours.", required=True)
+    children = forms.IntegerField(label="Question : combien d'enfants inscrits vont être effacés ? (le nombre est écrit en rouge plus haut)", min_value=0,
+                                  widget=forms.NumberInput(attrs={"inputmode": "numeric"}))
+    phrase = forms.CharField(label=f"Recopiez exactement : {RESET_PHRASE}", max_length=60, widget=forms.TextInput(attrs={"autocomplete": "off", "autocapitalize": "characters"}))
+    field_order = ["understand_all", "understand_bracelets", "understand_test", "children", "phrase", "password", "code"]
+
+    def __init__(self, *a, expected_children=0, **kw):
+        super().__init__(*a, **kw)
+        self.expected_children = expected_children
+
+    def clean_children(self):
+        if self.cleaned_data["children"] != self.expected_children:
+            raise forms.ValidationError("Ce n'est pas le bon nombre. Relisez le résumé en haut de la page.")
+        return self.cleaned_data["children"]
+
+    def clean_phrase(self):
+        import unicodedata
+
+        norm = lambda t: unicodedata.normalize("NFC", re.sub(r"\s+", " ", t.strip().upper()))
+        if norm(self.cleaned_data["phrase"]) != norm(RESET_PHRASE):
+            raise forms.ValidationError("La phrase ne correspond pas.")
+        return self.cleaned_data["phrase"]
 
 
 # ------------------------------------------------------------------ liens

@@ -93,11 +93,19 @@
       {% if request.user.is_lead_dev %}<p><b>Équipe technique :</b> inviter d'autres développeurs et cocher exactement ce qu'ils ont le droit de faire.</p>{% endif %}
       {% if can.audit %}<p><b>Journal de sécurité :</b> chaque action sensible (connexion, lien créé, PDF téléchargé, données vidées…) avec la date et la personne.</p>{% endif %}
       {% if can.settings %}<p><b>Réglages :</b> numéros affichés sur le site et texte imprimé sous chaque QR code.</p>{% endif %}
+      {% if request.user.is_lead_dev %}<p><b>Vider les données de test</b> (développeur principal uniquement) : efface tous les pèlerinages, paiements, enfants et scans pour repartir à zéro avant le lancement. Questions de vérification, mot de passe et code obligatoires. Comptes, réglages et journal sont conservés.</p>{% endif %}
       <p><b>Ne jamais modifier</b> les variables <code>KIDLINK_SIGNING_KEY</code> et <code>KIDLINK_FIELD_KEYS</code> sur Railway : tous les bracelets imprimés deviendraient invalides et les données illisibles.</p>
     </details>
     {% endif %}
   </div>
 </section>
+
+{% if request.user.is_lead_dev %}
+<section class="danger-zone">
+  <div><h2><svg class="ic"><use href="#i-alert"/></svg> Zone dangereuse</h2><p>Avant le lancement : effacer tous les essais (pèlerinages, paiements, enfants, scans). Réservé au développeur principal, avec mot de passe et code.</p></div>
+  <a class="btn btn-danger-soft" href="{% url 'dev:reset_data' %}">Vider les données de test</a>
+</section>
+{% endif %}
 
 <div class="split">
   <section class="panel">

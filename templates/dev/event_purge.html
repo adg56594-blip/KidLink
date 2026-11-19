@@ -1,6 +1,6 @@
 {% extends "dev/base.html" %}
 {% block title %}Vider les données{% endblock %}
-{% block crumb %}Événements · {{ ev.title }}{% endblock %}
+{% block crumb %}Pèlerinages · {{ ev.title }}{% endblock %}
 {% block page_title %}Vider les données{% endblock %}
 {% block content %}
 <div class="panel narrow danger-panel">
@@ -10,7 +10,11 @@
   {% if allowed %}
   <form method="post" novalidate>
     {% csrf_token %}
+    {% if form.non_field_errors %}<div class="warn-box" role="alert"><svg class="ic"><use href="#i-alert"/></svg><div>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div></div>{% endif %}
     {% include "partials/field.html" with field=form.confirm %}
+    {% include "partials/field.html" with field=form.password %}
+    {% if form.code %}{% include "partials/field.html" with field=form.code %}{% endif %}
+    <p class="help">Mot de passe et code demandés pour qu'un pirate ayant volé une session ne puisse rien effacer. 3 essais ratés = déconnexion.</p>
     <div class="form-actions">
       <a class="btn btn-light" href="{% url 'dev:events' %}">Annuler</a>
       <button class="btn btn-danger" type="submit">Effacer définitivement</button>

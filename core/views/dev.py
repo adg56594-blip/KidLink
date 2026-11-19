@@ -11,12 +11,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .. import crypto
-from ..forms import EventForm, InviteForm, LinkForm, PurgeForm, RolesForm, SettingsForm, link_expiry
+from ..forms import EventForm, InviteForm, LinkForm, PurgeForm, ResetDataForm, RolesForm, SettingsForm, link_expiry
 from ..models import AuditLog, Event, Invitation, Registration, RegistrationLink, ScanLog, User
 from ..roles import DEV_ROLES, clean_roles
 from ..security import lead_dev_required, role_required, two_factor_paused_until
-from ..services import pdf_response, purge_event
-from ..utils import audit
+from ..services import pdf_response, purge_event, reset_all_data
+from ..utils import audit, rate_count, rate_limited, reset_rate
 
 
 def ctx(nav, **extra):
@@ -87,16 +87,67 @@ def event_edit(request, pk=None):
 def event_purge(request, pk):
     ev = get_object_or_404(Event, pk=pk, purged_at__isnull=True)
     allowed = ev.retention_over or request.user.is_lead_dev
-    form = PurgeForm(request.POST or None)
+    form = PurgeForm(request.POST or None, user=request.user)
     if request.method == "POST":
         if not allowed:
             raise PermissionDenied
-        if form.is_valid():
+        if _reauth_blocked(request):
+            return redirect("auth:login")
+        if not form.is_valid():
+            _reauth_failed(request)
+        else:
             n = purge_event(ev, request.user)
             audit(request, "event_purged", f"{ev.pk} · {ev.title} · {n} inscription(s) effacée(s)")
             messages.success(request, f"Données effacées : {n} inscription(s).")
             return redirect("dev:events")
     return render(request, "dev/event_purge.html", ctx("events", ev=ev, form=form, allowed=allowed, count=ev.registrations.count()))
+
+
+REAUTH_MAX_FAILS = 3
+
+
+def _reauth_blocked(request):
+    """Après 3 échecs (mot de passe / code / questions) en 15 min avant une suppression,
+    le compte est déconnecté et ne peut plus rien effacer pendant 15 min."""
+    from django.contrib.auth import logout
+
+    if rate_count(f"reauth:{request.user.pk}") >= REAUTH_MAX_FAILS:
+        audit(request, "reauth_blocked", request.path)
+        logout(request)
+        messages.error(request, "Trop d'essais ratés : vous avez été déconnecté par sécurité. Réessayez dans 15 minutes.")
+        return True
+    return False
+
+
+def _reauth_failed(request):
+    rate_limited(f"reauth:{request.user.pk}", REAUTH_MAX_FAILS, 900)
+    audit(request, "reauth_failed", request.path)
+
+
+@lead_dev_required
+@require_http_methods(["GET", "POST"])
+def reset_data(request):
+    """Vider TOUTES les données de test. Réservé au développeur principal, avec questions,
+    phrase de confirmation, mot de passe et code de sécurité."""
+    summary = {
+        "pelerinages": Event.objects.count(),
+        "paiements": RegistrationLink.objects.count(),
+        "enfants": Registration.objects.count(),
+        "scans": ScanLog.objects.count(),
+        "argent": RegistrationLink.objects.aggregate(a=Sum("amount_received"))["a"] or 0,
+    }
+    form = ResetDataForm(request.POST or None, user=request.user, expected_children=summary["enfants"])
+    if request.method == "POST":
+        if _reauth_blocked(request):
+            return redirect("auth:login")
+        if form.is_valid():
+            counts = reset_all_data(request.user)
+            reset_rate(f"reauth:{request.user.pk}")
+            audit(request, "all_data_reset", " · ".join(f"{k}={v}" for k, v in counts.items()))
+            messages.success(request, f"Données de test effacées : {counts['pelerinages']} pèlerinage(s), {counts['paiements']} paiement(s), {counts['enfants']} enfant(s).")
+            return redirect("dev:dashboard")
+        _reauth_failed(request)
+    return render(request, "dev/reset_data.html", ctx("reset", form=form, summary=summary))
 
 
 # ================================================================== liens d'inscription
