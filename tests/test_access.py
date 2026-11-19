@@ -283,7 +283,7 @@ def test_2fa_pause_is_temporary_and_bounded(client, admin, settings):
     r = client.post("/connexion/", {"email": admin.email, "password": PWD})
     assert r.status_code == 302 and r["Location"] == "/espace/"
     page = client.get("/espace/").content.decode()
-    assert "double authentification en pause" in page
+    assert "code de sécurité désactivé" in page
     # Date passée, trop lointaine ou illisible : la 2FA reste obligatoire
     for bad in [(today - timedelta(days=1)).isoformat(), (today + timedelta(days=30)).isoformat(), "demain", ""]:
         settings.KIDLINK_2FA_PAUSE_UNTIL = bad

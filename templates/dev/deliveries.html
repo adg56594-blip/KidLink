@@ -11,16 +11,16 @@
 {% if rows %}
 <form method="post" action="{% url 'dev:deliveries_bulk' %}" class="panel table-panel">
   {% csrf_token %}
-  <table class="table">
+  <table class="table rtable">
     <thead><tr><th></th><th>Lot</th><th>Inscrits</th><th>Règle</th><th>Disponible pour l'admin</th><th></th></tr></thead>
     <tbody>
     {% for l in rows %}
     <tr>
       <td>{% if can.deliveries %}<input type="checkbox" name="ids" value="{{ l.pk }}" aria-label="Sélectionner {{ l.label }}">{% endif %}</td>
-      <td><strong>{{ l.label }}</strong><small>{{ l.event.title }}</small></td>
-      <td><b>{{ l.n }}</b>/{{ l.quota }}</td>
-      <td><span class="tag">{{ l.get_delivery_mode_display }}{% if l.delivery_mode == 'delayed' %} · {{ l.delivery_delay_hours }} h{% endif %}</span></td>
-      <td>{% if l.is_released %}<span class="pill pill-actif">Livré</span>{% elif l.release_at %}{{ l.release_at|date:"j M H:i" }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td data-label="Lot"><strong>{{ l.label }}</strong><small>{{ l.event.title }}</small></td>
+      <td data-label="Inscrits"><b>{{ l.n }}</b>/{{ l.quota }}</td>
+      <td data-label="Règle"><span class="tag">{{ l.get_delivery_mode_display }}{% if l.delivery_mode == 'delayed' %} · {{ l.delivery_delay_hours }} h{% endif %}</span></td>
+      <td data-label="Disponible">{% if l.is_released %}<span class="pill pill-actif">Livré</span>{% elif l.release_at %}{{ l.release_at|date:"j M H:i" }}{% else %}<span class="muted">—</span>{% endif %}</td>
       <td><div class="row-actions">
         {% if can.dev_documents and l.n %}<a class="btn btn-light btn-sm" href="{% url 'dev:pdf' l.pk %}">PDF</a>{% endif %}
         {% if can.deliveries %}<a class="btn btn-light btn-sm" href="{% url 'dev:delivery_edit' l.pk %}">Régler</a>{% endif %}

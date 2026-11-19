@@ -184,14 +184,14 @@ MAX_QUOTA = 2000
 
 class LinkForm(forms.Form):
     event = forms.ModelChoiceField(label="Événement", queryset=Event.objects.none(), empty_label=None)
-    label = TextField(label="Famille ou paroisse", max_length=120, widget=forms.TextInput(attrs={"placeholder": "Ex. Famille HOUNSOU ou Paroisse Akpakpa"}))
-    payer_name = TextField(label="Nom de la personne qui a payé", max_length=120)
-    payer_phone = PhoneField(label="Téléphone de la personne qui a payé", required=False)
-    quota = forms.IntegerField(label="Nombre d'enfants payés", min_value=1, max_value=MAX_QUOTA)
-    quota_confirm = forms.IntegerField(label="Retapez le nombre d'enfants", min_value=1, max_value=MAX_QUOTA)
-    amount_received = forms.IntegerField(label="Montant encaissé (FCFA)", min_value=0, max_value=100_000_000)
-    valid_days = forms.IntegerField(label="Lien valable pendant (jours)", min_value=1, max_value=90, initial=7)
-    discount_ack = forms.BooleanField(label="J'ai accordé une réduction (montant inférieur au prix normal)", required=False)
+    label = TextField(label="Pour quelle famille ou paroisse ?", max_length=120, widget=forms.TextInput(attrs={"placeholder": "Ex. Famille HOUNSOU"}))
+    payer_name = TextField(label="Qui a payé ?", max_length=120, widget=forms.TextInput(attrs={"placeholder": "Nom de la personne"}))
+    payer_phone = PhoneField(label="Son numéro WhatsApp", required=False, help_text="Pour lui envoyer le lien en un clic.")
+    quota = forms.IntegerField(label="Combien d'enfants ont été payés ?", min_value=1, max_value=MAX_QUOTA, widget=forms.NumberInput(attrs={"inputmode": "numeric"}))
+    quota_confirm = forms.IntegerField(label="Retapez le même nombre (vérification)", min_value=1, max_value=MAX_QUOTA, widget=forms.NumberInput(attrs={"inputmode": "numeric"}))
+    amount_received = forms.IntegerField(label="Argent reçu (FCFA)", min_value=0, max_value=100_000_000, widget=forms.NumberInput(attrs={"inputmode": "numeric"}))
+    valid_days = forms.IntegerField(label="Le lien marche pendant combien de jours ?", min_value=1, max_value=90, initial=7, widget=forms.NumberInput(attrs={"inputmode": "numeric"}))
+    discount_ack = forms.BooleanField(label="J'ai fait une réduction", required=False)
     cash_ack = forms.BooleanField(label="Je confirme avoir encaissé ce montant pour exactement ce nombre d'enfants.", required=True)
 
     def __init__(self, *a, **kw):

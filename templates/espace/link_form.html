@@ -17,7 +17,7 @@
     </div>
   </div>
   <div class="form-section">
-    <h2><span class="num">2</span> Combien d'enfants ont été payés ?</h2>
+    <h2><span class="num">2</span> Le paiement</h2>
     <div class="grid2">
       {% include "partials/field.html" with field=form.quota %}
       {% include "partials/field.html" with field=form.quota_confirm %}
@@ -38,7 +38,7 @@
     <p class="warn-box" id="recap-warn" hidden></p>
     {% include "partials/field.html" with field=form.cash_ack %}
   </div>
-  <div class="form-actions">
+  <div class="form-actions sticky-actions">
     <a class="btn btn-light" href="{% url 'espace:links' %}">Annuler</a>
     <button class="btn btn-primary" type="submit" data-confirm-quota><svg class="ic"><use href="#i-link"/></svg> Créer le lien</button>
   </div>

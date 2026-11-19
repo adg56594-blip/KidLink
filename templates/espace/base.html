@@ -1,11 +1,11 @@
 {% extends "base.html" %}{% load static %}
 {% block body_class %}page-app{% endblock %}
 {% block body %}
-<div class="app">
+<div class="app has-tabbar">
   <aside class="sidebar" id="sidebar">
     <div class="side-rainbow" aria-hidden="true"></div>
     <a class="side-brand" href="{% url 'espace:dashboard' %}">
-      <img src="{% static 'img/semekids-mark.svg' %}" alt="" width="44" height="46">
+      <img src="{% static 'img/seme2026-emblem.webp' %}" alt="" width="44" height="46">
       <span><strong>Sèmè <span>Kids</span></strong><small>Administration</small></span>
     </a>
     <nav class="side-nav" aria-label="Menu">
@@ -39,9 +39,16 @@
       <div class="app-actions">{% block actions %}{% endblock %}</div>
     </header>
     {% include "partials/messages.html" %}
-    {% if twofa_paused_until %}<div class="pause-banner" role="alert"><svg class="ic"><use href="#i-alert"/></svg><span><b>Mode test :</b> double authentification en pause jusqu'au {{ twofa_paused_until|date:"j F Y à H:i" }}. Supprimez la variable <code>KIDLINK_2FA_PAUSE_UNTIL</code> dans Railway pour la réactiver avant.</span></div>{% endif %}
+    {% if twofa_paused_until %}<div class="pause-banner" role="alert"><svg class="ic"><use href="#i-alert"/></svg><span><b>Mode test</b> · code de sécurité désactivé jusqu'au {{ twofa_paused_until|date:"j M à H:i" }}</span></div>{% endif %}
     <div class="app-content" id="main">{% block content %}{% endblock %}</div>
   </div>
 </div>
 <div class="scrim" data-toggle-menu></div>
+<nav class="tabbar" aria-label="Menu principal">
+  <a href="{% url 'espace:dashboard' %}" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg><span>Accueil</span></a>
+  {% if can.links or can.registrations or can.documents %}<a href="{% url 'espace:links' %}" {% if nav == 'links' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-link"/></svg><span>Liens</span></a>{% endif %}
+  {% if can.links %}<a class="tab-main" href="{% url 'espace:link_new' %}" aria-label="Nouveau lien après paiement"><svg class="ic"><use href="#i-plus"/></svg><span>Paiement</span></a>{% endif %}
+  {% if can.documents %}<a href="{% url 'espace:documents' %}" {% if nav == 'documents' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-doc"/></svg><span>Bracelets</span></a>{% endif %}
+  <button type="button" data-toggle-menu {% if nav == 'events' or nav == 'team' or nav == 'account' %}aria-current="page"{% endif %}><svg class="ic"><use href="#i-menu"/></svg><span>Plus</span></button>
+</nav>
 {% endblock %}

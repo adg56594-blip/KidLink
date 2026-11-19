@@ -24,6 +24,16 @@
 </section>
 {% endif %}
 
+<section class="quick" aria-labelledby="quick-t">
+  <h2 id="quick-t">Que voulez-vous faire&nbsp;?</h2>
+  <div class="quick-grid">
+    {% if can.links %}<a class="qa qa-main" href="{% url 'espace:link_new' %}"><span class="qa-ic"><svg class="ic"><use href="#i-cash"/></svg></span><span><b>J'ai reçu un paiement</b><small>Créer le lien à envoyer à la famille</small></span></a>{% endif %}
+    {% if can.links or can.registrations %}<a class="qa" href="{% url 'espace:links' %}"><span class="qa-ic"><svg class="ic"><use href="#i-child"/></svg></span><span><b>Voir les inscriptions</b><small>Qui a rempli, combien de places restent</small></span></a>{% endif %}
+    {% if can.documents %}<a class="qa" href="{% url 'espace:documents' %}"><span class="qa-ic"><svg class="ic"><use href="#i-doc"/></svg></span><span><b>Bracelets à imprimer</b><small>{% if documents_ready %}{{ documents_ready }} PDF prêt(s){% else %}Rien de prêt pour l'instant{% endif %}</small></span></a>{% endif %}
+    {% if can.events %}<a class="qa" href="{% url 'espace:events' %}"><span class="qa-ic"><svg class="ic"><use href="#i-cal"/></svg></span><span><b>Le pèlerinage</b><small>Dates, prix, affichage sur l'accueil</small></span></a>{% endif %}
+  </div>
+</section>
+
 <section class="stats">
   <article class="stat c-blue"><span class="stat-ic"><svg class="ic"><use href="#i-band"/></svg></span><p>Places payées</p><b>{{ places }}</b><small>{{ links_active }} lien(s) actif(s)</small></article>
   <article class="stat c-green"><span class="stat-ic"><svg class="ic"><use href="#i-child"/></svg></span><p>Enfants inscrits</p><b>{{ filled }}</b>

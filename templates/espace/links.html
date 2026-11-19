@@ -3,27 +3,25 @@
 {% block page_title %}Liens d'inscription{% endblock %}
 {% block actions %}{% if can.links %}<a class="btn btn-primary" href="{% url 'espace:link_new' %}"><svg class="ic"><use href="#i-plus"/></svg><span>Nouveau lien</span></a>{% endif %}{% endblock %}
 {% block content %}
+<p class="intro">Un lien = une famille ou une paroisse qui a payé. Touchez un lien pour voir les enfants inscrits.</p>
 <form class="search" method="get" role="search">
   <input type="search" name="q" value="{{ q }}" placeholder="Rechercher une famille, une paroisse, un événement…" aria-label="Rechercher">
 </form>
 {% if links %}
-<div class="panel table-panel">
-  <table class="table">
-    <thead><tr><th>Famille / paroisse</th><th>Événement</th><th>Inscrits</th><th>Encaissé</th><th>État</th><th></th></tr></thead>
-    <tbody>
-    {% for l in links %}
-      <tr>
-        <td><strong>{{ l.label }}</strong><small>créé le {{ l.created_at|date:"j M Y" }}</small></td>
-        <td>{{ l.event.title }}</td>
-        <td><div class="mini-bar"><progress max="{{ l.quota }}" value="{{ l.n }}"></progress><span><b>{{ l.n }}</b>/{{ l.quota }}</span></div></td>
-        <td>{{ l.amount_received|fcfa }}</td>
-        <td><span class="pill pill-{{ l.status_label|slugify }}">{{ l.status_label }}</span></td>
-        <td><a class="btn btn-light btn-sm" href="{% url 'espace:link_detail' l.pk %}">Ouvrir</a></td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
+<ul class="lcards">
+  {% for l in links %}
+  <li>
+    <a class="lcard" href="{% url 'espace:link_detail' l.pk %}">
+      <span class="ll-ring"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" class="ring-bg"/><circle cx="20" cy="20" r="16" class="ring-fg" pathLength="100" stroke-dasharray="{{ l.n|pct:l.quota }} 100"/></svg></span>
+      <span class="lc-main">
+        <strong>{{ l.label }}</strong>
+        <small>{{ l.event.title }} · {{ l.amount_received|fcfa }}</small>
+      </span>
+      <span class="lc-side"><b>{{ l.n }}<i>/{{ l.quota }}</i></b><span class="pill pill-{{ l.status_label|slugify }}">{{ l.status_label }}</span></span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
 {% else %}
 <div class="panel empty"><svg class="ic"><use href="#i-link"/></svg><p>{% if q %}Aucun résultat.{% else %}Aucun lien. Encaissez le paiement, puis créez un lien pour le nombre exact d'enfants payés.{% endif %}</p></div>
 {% endif %}

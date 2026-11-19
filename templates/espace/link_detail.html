@@ -52,16 +52,16 @@
 <section class="panel table-panel">
   <div class="panel-head"><h2>Enfants inscrits ({{ regs|length }})</h2></div>
   {% if regs %}
-  <table class="table">
+  <table class="table rtable">
     <thead><tr><th>Enfant</th><th>Paroisse</th><th>Parent</th><th>Inscrit le</th><th>Bracelet</th></tr></thead>
     <tbody>
     {% for r in regs %}
       <tr{% if r.revoked_at %} class="is-off"{% endif %}>
-        <td><strong>{{ r.full_name }}</strong></td>
-        <td>{{ r.paroisse }}</td>
-        <td>{{ r.parent_name }}<small>{{ r.parent_phone|phone }}</small></td>
-        <td>{{ r.created_at|date:"j M H:i" }}</td>
-        <td>
+        <td data-label="Enfant"><strong>{{ r.full_name }}</strong>{% if r.ref_display %}<small>{{ r.ref_display }}</small>{% endif %}</td>
+        <td data-label="Paroisse">{{ r.paroisse }}</td>
+        <td data-label="Parent">{{ r.parent_name }}<small>{{ r.parent_phone|phone }}</small></td>
+        <td data-label="Inscrit le">{{ r.created_at|date:"j M H:i" }}</td>
+        <td data-label="Bracelet">
           <form method="post" action="{% url 'espace:registration_revoke' r.pk %}" data-confirm="{% if r.revoked_at %}Réactiver ce bracelet ?{% else %}Désactiver ce bracelet (perdu ou volé) ?{% endif %}">{% csrf_token %}
             <button class="btn btn-sm {% if r.revoked_at %}btn-light{% else %}btn-danger-soft{% endif %}" type="submit">{% if r.revoked_at %}Réactiver{% else %}Désactiver{% endif %}</button>
           </form>

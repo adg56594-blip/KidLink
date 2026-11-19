@@ -13,7 +13,7 @@
 :root{
   --ivory:#f3f8ff; --ivory-2:#e4eefb; --paper:#ffffff;
   --ink:#0b2a66; --ink-2:#1b3d7c; --muted:#5a6b8c; --line:#d9e5f5; --line-2:#c3d4ec;
-  --royal:#0a46a8; --royal-2:#1565d8; --royal-soft:#e4eeff; --green:#0aa63a; --green-2:#13c24a; --sun:#fcd909;
+  --royal:#0a46a8; --royal-2:#1565d8; --royal-soft:#e4eeff; --green:#0aa63a; --green-2:#13c24a; --sun:#fdb707;
   --r:#e2302f; --o:#ff9a1f; --y:#fcd909; --g:#0aa63a; --b:#1565d8; --v:#0a46a8;
   --ok:#0e9f5b; --ok-soft:#e3f7ec; --bad:#d92d3a; --bad-soft:#fdeaec; --warn:#c77700; --warn-soft:#fff3dc;
   --rainbow:linear-gradient(90deg,#0a46a8,#1565d8 30%,#0aa63a 65%,#5cc93b 85%,#fcd909);
@@ -602,3 +602,124 @@ progress::-moz-progress-bar{background:linear-gradient(90deg,var(--g),#5ad08f);b
 @media(min-width:1232px){.slogan{margin-inline:auto}}
 .pause-banner{display:flex;gap:12px;align-items:center;margin:16px clamp(16px,3vw,36px) 0;padding:14px 18px;border-radius:16px;background:#b3121f;color:#fff;font-weight:600;box-shadow:0 10px 30px -12px rgba(179,18,31,.7)}
 .pause-banner code{background:rgba(255,255,255,.18);padding:.1em .4em;border-radius:6px;color:#fff}
+
+/* =====================================================================
+   SMARTPHONE D'ABORD — l'administrateur n'utilise que son téléphone
+   ===================================================================== */
+/* Logo SEME 2026 */
+.hero-logo{position:absolute;bottom:2%;width:min(330px,72%);height:auto;border-radius:28px;background:#fff;padding:14px 18px;box-shadow:var(--shadow-3)}
+.link-logo{width:min(230px,62vw);height:auto;border-radius:24px;background:#fff;padding:10px 14px}
+.brand img,.side-brand img,.scan-head img{width:auto;height:44px;border-radius:12px;background:#fff;padding:3px 5px}
+.scan-head img{height:54px}
+.auth-logo{width:180px;height:auto;padding:12px 14px}
+.center-card img{width:140px;height:auto}
+
+/* Que voulez-vous faire ? */
+.quick h2{font:900 1.3rem var(--display);margin:0 0 12px}
+.quick-grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:700px){.quick-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1200px){.quick-grid{grid-template-columns:repeat(4,1fr)}}
+.qa{display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:var(--paper);border:1.5px solid var(--line);text-decoration:none;color:var(--ink);box-shadow:var(--shadow-1);min-height:76px;transition:transform .15s,box-shadow .15s}
+.qa:active{transform:scale(.98)}
+.qa b{display:block;font-size:1.08rem}
+.qa small{display:block;color:var(--muted);font-size:.92rem;margin-top:2px}
+.qa-ic{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--royal-soft);color:var(--royal);flex:none}
+.qa-ic .ic{width:28px;height:28px}
+.qa-main{background:linear-gradient(135deg,#13c24a,#078a30);border-color:transparent;color:#fff;box-shadow:0 14px 30px -14px rgba(10,166,58,.9)}
+.qa-main small{color:#e6ffee}
+.qa-main .qa-ic{background:rgba(255,255,255,.2);color:#fff}
+
+/* Liste des liens en cartes */
+.lcards{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.lcard{display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow-1);text-decoration:none;color:var(--ink);min-height:76px}
+.lcard:active{transform:scale(.99)}
+.lc-main{flex:1;min-width:0}
+.lc-main strong{display:block;font-size:1.05rem;overflow-wrap:anywhere}
+.lc-main small{display:block;color:var(--muted);font-size:.9rem;margin-top:2px}
+.lc-side{display:grid;justify-items:end;gap:6px;flex:none}
+.lc-side b{font:900 1.35rem var(--display)}
+.lc-side i{font-style:normal;color:var(--muted);font-size:.85em;font-weight:700}
+
+/* Barre d'onglets en bas (téléphone et tablette) */
+.tabbar{display:none}
+@media(max-width:1023px){
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:45;display:flex;justify-content:space-around;align-items:flex-end;gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);box-shadow:0 -10px 30px -18px rgba(10,40,100,.35)}
+  .tabbar a,.tabbar button{flex:1;display:grid;justify-items:center;gap:3px;padding:6px 2px;min-height:58px;border:0;background:none;color:var(--muted);text-decoration:none;font:700 .8rem var(--font);border-radius:14px;cursor:pointer}
+  .tabbar .ic{width:26px;height:26px}
+  .tabbar [aria-current=page]{color:var(--royal);background:var(--royal-soft)}
+  .tabbar .tab-main{color:#fff;flex:1.1}
+  .tabbar .tab-main .ic{width:58px;height:58px;padding:15px;margin-top:-26px;border-radius:50%;background:linear-gradient(135deg,#13c24a,#078a30);box-shadow:0 10px 24px -8px rgba(10,166,58,.9);border:4px solid #fff}
+  .tabbar .tab-main span{color:#078a30}
+  .has-tabbar .app-content{padding-bottom:110px}
+  .has-tabbar .menu-btn{display:none}
+  .has-tabbar .sidebar{padding-bottom:100px}
+  .theme-dev .tabbar{background:rgba(10,20,45,.96);border-color:#1f2b52}
+}
+
+/* Bouton d'action toujours visible pendant un formulaire long */
+@media(max-width:1023px){
+  .sticky-actions{position:sticky;bottom:84px;z-index:5;margin:8px -8px 0;padding:12px;border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 10px 30px -12px rgba(10,40,100,.35)}
+  .sticky-actions .btn{flex:1}
+}
+
+/* Tableaux -> cartes sur petit écran */
+@media(max-width:760px){
+  .rtable thead{display:none}
+  .rtable,.rtable tbody,.rtable tr,.rtable td{display:block;width:100%}
+  .rtable tr{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .rtable td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border:0;text-align:right}
+  .rtable td::before{content:attr(data-label);color:var(--muted);font-weight:700;font-size:.9rem;text-align:left;flex:none}
+  .rtable td:not([data-label])::before{content:none}
+  .rtable td small{display:block}
+}
+
+/* Petits écrans : textes plus grands, rien de minuscule */
+@media(max-width:640px){
+  html{font-size:106.25%}
+  small,.pill,.tag,.crumb,.help,.small,.muted.small,.stat small,.stat p,.ll-main small,.ec-meta dt,.ec-ret,.kv dt,.recap span,.field label em,.foot-dev,.scan-foot,.child-info dt,.cd-grid span,.spot-kicker,.kicker,.brand-txt small,.side-brand small,.side-user small,.band-card small,.call-card small{font-size:.875rem!important}
+  .pill,.tag{padding:.4em .7em}
+  .btn-sm{font-size:.95rem;padding:.65em 1em;min-height:44px}
+  .linklike{font-size:1rem;padding:10px 0}
+  .app-top{padding:12px 16px}
+  .app-title h1{white-space:normal;font-size:1.45rem;line-height:1.15}
+  .app-content{padding:16px;gap:18px}
+  .panel{padding:18px 16px;border-radius:20px}
+  .stats{grid-template-columns:1fr 1fr;gap:10px}
+  .stat{padding:14px;border-radius:18px}
+  .stat-ic{width:38px;height:38px;margin-bottom:8px}
+  .stat b{font-size:1.55rem}
+  .hero-panel{padding:18px}
+  .hero-panel h2{font-size:1.45rem}
+  .countdown.compact .cd-grid{grid-template-columns:repeat(3,1fr)}
+  .pause-banner{margin:12px 16px 0;padding:10px 14px;font-size:.95rem}
+  .form-section h2{font-size:1.15rem}
+  .recap{grid-template-columns:1fr}
+  .recap div{display:flex;justify-content:space-between;align-items:center}
+  .event-card h2{font-size:1.3rem}
+  .ec-actions .btn{flex:1}
+  .newlink{padding:16px}
+  .nl-actions .btn,.copy-row .btn{width:100%}
+  .people li{flex-wrap:wrap}
+  .finder-tips li,.child-info dd{font-size:1.02rem}
+  .foot-link{width:100%;justify-content:center}
+  .hero-logo{width:min(280px,78%)}
+  .band-card,.call-card{font-size:.9rem}
+}
+@media(max-width:1023px){.tabbar a,.tabbar button{font-size:.86rem}}
+@media(max-width:640px){
+  .ec-date{font-size:.8rem;width:66px}
+  .quota-txt span{font-size:.9rem}
+  .field-check input{width:26px;height:26px}
+  .foot-dev a,.scan-foot a,.link-wrap .scan-foot a{display:inline-block;padding:10px 4px}
+}
+@media(max-width:1023px){.has-tabbar .app-actions{display:none}}
+.kicker,.spot-kicker{line-height:1.35}
+@media(max-width:640px){.ll-main strong{white-space:normal;overflow-wrap:anywhere}}
+@media(max-width:760px){
+  .rtable td{display:grid;grid-template-columns:6.5em 1fr;column-gap:12px;align-items:center;text-align:right}
+  .rtable td::before{grid-column:1;grid-row:1/span 3;align-self:start;padding-top:2px}
+  .rtable td>*{grid-column:2;justify-self:end}
+  .rtable td strong{font-size:1.05rem}
+  .rtable td form{justify-self:end}
+}
+@media(max-width:1023px){.split>.tips{display:none}}

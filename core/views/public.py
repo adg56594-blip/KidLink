@@ -22,7 +22,7 @@ SW_REVISION = "2"
 SW_ASSETS = [
     "css/app.css", "js/app.js", "js/scan.js", "js/scanner.js", "vendor/jsQR.js",
     "fonts/jakarta.woff2", "fonts/jakarta-ext.woff2", "fonts/nunito.woff2", "fonts/nunito-ext.woff2", "fonts/nunito-italic.woff2",
-    "img/semekids-mark.svg", "img/icon-192.png",
+    "img/seme2026-emblem.webp", "img/icon-192.png",
 ]
 FAMILY_FIELDS = ["parent_name", "parent_phone", "parent_phone2", "paroisse", "charge_name", "charge_phone"]
 
