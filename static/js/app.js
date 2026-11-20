@@ -8,6 +8,12 @@
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {}); });
   }
 
+  // Page ré-affichée depuis la mémoire du navigateur (bouton retour, onglet rouvert…) :
+  // on la recharge pour avoir un jeton de sécurité neuf avant tout envoi de formulaire.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted && document.querySelector('input[name="csrfmiddlewaretoken"]')) location.reload();
+  });
+
   // Apparition douce au défilement
   var rev = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {

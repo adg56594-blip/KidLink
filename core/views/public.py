@@ -134,7 +134,9 @@ def link_form(request, token):
             request.session[f"last_{link.pk}"] = reg.full_name
             return redirect(request.path + "?ok=1")
     else:
-        form = ChildForm(initial=request.session.get(session_key) or {})
+        from .errors import pop_retry
+
+        form = ChildForm(initial={**(request.session.get(session_key) or {}), **pop_retry(request)})
 
     ctx["form"] = form
     if request.GET.get("ok"):

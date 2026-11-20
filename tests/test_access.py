@@ -355,9 +355,11 @@ def test_suspended_account_is_logged_out(client, admin):
 
 
 def test_csrf_enforced(admin):
+    """Sans jeton valide, la connexion n'a pas lieu (on recharge simplement la page)."""
     c = Client(enforce_csrf_checks=True)
     r = c.post("/connexion/", {"email": admin.email, "password": PWD})
-    assert r.status_code == 403
+    assert r.status_code == 302 and "rt=1" in r["Location"]
+    assert "_auth_user_id" not in c.session
 
 
 def test_predeploy_creates_one_time_lead_dev_link(db, capsys):
@@ -589,3 +591,51 @@ def test_saving_old_format_fiche_upgrades_qr(client, lead_dev, registration):
     r.refresh_from_db()
     d = verify_fragment(r.public_id, r.qr_fragment)
     assert d.payload.startswith("2|") and d.data["charge_name"] == "Frère Paul" and r.reprint_needed
+
+
+def test_expired_security_token_on_login_recovers_gracefully(admin):
+    """Page de connexion restée ouverte / ré-affichée : pas de page d'erreur, on réessaie simplement."""
+    c = Client(enforce_csrf_checks=True)
+    page = c.get("/connexion/")
+    import re
+
+    token = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', page.content.decode()).group(1)
+    c.cookies["kl_csrf"] = "jeton-perime-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # le jeton du formulaire ne correspond plus
+    r = c.post("/connexion/", {"csrfmiddlewaretoken": token, "email": admin.email, "password": PWD})
+    assert r.status_code == 302 and r["Location"].startswith("/connexion/?")
+    page = c.get(r["Location"]).content.decode()
+    assert "la page vient d" in page and f'value="{admin.email}"' in page  # e-mail déjà rempli, pas d'erreur
+    assert "Session expirée" not in page
+    # Le nouvel essai fonctionne
+    token = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', page).group(1)
+    r = c.post(r["Location"], {"csrfmiddlewaretoken": token, "email": admin.email, "password": PWD})
+    assert r.status_code == 302 and r["Location"].endswith("/connexion/code/")
+
+
+def test_cookies_blocked_explained(admin):
+    c = Client(enforce_csrf_checks=True)
+    r = c.post("/connexion/?rt=1", {"email": admin.email, "password": PWD})  # aucun cookie envoyé
+    assert r.status_code == 403 and "Cookies bloqués" in r.content.decode()
+
+
+def test_expired_token_on_family_form_keeps_typed_data(link_factory):
+    import re
+
+    from .conftest import CHILD
+
+    link = link_factory()
+    c = Client(enforce_csrf_checks=True)
+    c.get(f"/i/{link.raw_token}/")
+    c.cookies["kl_csrf"] = "jeton-perime-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    r = c.post(f"/i/{link.raw_token}/", {**CHILD, "csrfmiddlewaretoken": "faux" * 8})
+    assert r.status_code == 302
+    page = c.get(r["Location"]).content.decode()
+    assert 'value="Rosine Hounsou"' in page and 'value="Paroisse Akpakpa"' in page
+    assert not Registration.objects.exists()  # rien n'a été enregistré sans jeton valide
+
+
+def test_expired_token_on_logout_button_returns_to_page(admin):
+    c = Client(enforce_csrf_checks=True)
+    staff_client(c, admin)
+    r = c.post("/deconnexion/", HTTP_REFERER="http://testserver/espace/")
+    assert r.status_code == 302 and r["Location"].startswith("/espace/?")

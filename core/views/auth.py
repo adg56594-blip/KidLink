@@ -26,7 +26,9 @@ def _home_for(user):
 def login_view(request):
     if request.user.is_authenticated and request.session.get("otp_ok"):
         return redirect(_home_for(request.user))
-    form = LoginForm(request.POST or None)
+    from .errors import pop_retry
+
+    form = LoginForm(request.POST or None, initial=pop_retry(request) if request.method == "GET" else None)
     if request.method == "POST":
         ip = client_ip(request)
         email = (request.POST.get("email") or "").lower()[:254]
