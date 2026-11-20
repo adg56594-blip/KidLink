@@ -55,6 +55,10 @@
 
   <noscript><p class="bad-card">Activez JavaScript pour lire ce bracelet, ou appelez l'administration : {{ admin_phone_pretty }}</p></noscript>
   <p class="motto">Ensemble pour la sécurité de nos enfants !</p>
+  <div class="offline-status" data-offline-status hidden>
+    <svg class="ic"><use href="#i-shield"/></svg>
+    <span data-offline-text>Vérification…</span>
+  </div>
   <p class="scan-foot">Page officielle Sèmè Kids · <a href="/">Accueil</a> · <a href="{% url 'public:scanner' %}">Scanner un autre bracelet</a></p>
 </main>
 {% endblock %}

@@ -90,6 +90,31 @@
   var ios = document.querySelector('[data-install-ios]');
   if (ios && !standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) ios.hidden = false;
 
+  // Indicateur « prêt sans internet » : la page de lecture et le scanner sont-ils en mémoire ?
+  var off = document.querySelector('[data-offline-status]');
+  if (off) {
+    var txt = off.querySelector('[data-offline-text]');
+    var show = function (ok, msg) { off.hidden = false; off.classList.toggle('ok', ok); off.classList.toggle('ko', !ok); txt.innerHTML = msg; };
+    if (!('serviceWorker' in navigator) || !window.caches) {
+      show(false, '<b>Ce navigateur ne permet pas la lecture sans internet.</b> Utilisez Chrome (Android) ou Safari (iPhone).');
+    } else {
+      var check = function () {
+        caches.keys().then(function (ks) {
+          return Promise.all(ks.filter(function (k) { return k.indexOf('kidlink-') === 0; }).map(function (k) {
+            return caches.open(k).then(function (c) { return Promise.all([c.match('/v/_/'), c.match('/scanner/')]); });
+          }));
+        }).then(function (all) {
+          var ready = all.some(function (pair) { return pair[0] && pair[1]; });
+          if (ready) show(true, '<b>Prêt sans internet ✓</b> Ce téléphone peut lire les bracelets même sans connexion.');
+          else show(false, '<b>Pas encore prêt sans internet.</b> Gardez cette page ouverte quelques secondes avec internet.');
+          return ready;
+        }).catch(function () {});
+      };
+      check();
+      navigator.serviceWorker.ready.then(function () { setTimeout(check, 1500); });
+    }
+  }
+
   // Menu mobile
   document.querySelectorAll('[data-toggle-menu]').forEach(function (b) {
     b.addEventListener('click', function () { document.body.classList.toggle('menu-open'); });
